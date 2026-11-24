@@ -1,0 +1,16 @@
+ckpt_step000100.delta 314700296 encoded 35 tensors, 425,984,000 values, 0.7806 changed; 852 MB -> 314.7 MB in 10
+ckpt_step000200.delta 357475064 encoded 35 tensors, 425,984,000 values, 0.8664 changed; 852 MB -> 357.5 MB in 11
+ckpt_step000300.delta 377007376 encoded 35 tensors, 425,984,000 values, 0.8950 changed; 852 MB -> 377.0 MB in 11
+ckpt_step000400.delta 389209212 encoded 35 tensors, 425,984,000 values, 0.9099 changed; 852 MB -> 389.2 MB in 11
+ckpt_step000500.delta 397695520 encoded 35 tensors, 425,984,000 values, 0.9192 changed; 852 MB -> 397.7 MB in 12
+ckpt_step000600.delta 403870176 encoded 35 tensors, 425,984,000 values, 0.9254 changed; 852 MB -> 403.9 MB in 12
+ckpt_step000700.delta 408438540 encoded 35 tensors, 425,984,000 values, 0.9297 changed; 852 MB -> 408.4 MB in 12
+ckpt_step000800.delta 411741508 encoded 35 tensors, 425,984,000 values, 0.9327 changed; 852 MB -> 411.7 MB in 12
+ckpt_step000900.delta 414128908 encoded 35 tensors, 425,984,000 values, 0.9347 changed; 852 MB -> 414.1 MB in 12
+ckpt_step001000.delta 415841252 encoded 35 tensors, 425,984,000 values, 0.9362 changed; 852 MB -> 415.8 MB in 12
+ckpt_step001100.delta 417024384 encoded 35 tensors, 425,984,000 values, 0.9372 changed; 852 MB -> 417.0 MB in 12
+ckpt_step001200.delta 417832688 encoded 35 tensors, 425,984,000 values, 0.9378 changed; 852 MB -> 417.8 MB in 12
+ckpt_step001300.delta 418397960 encoded 35 tensors, 425,984,000 values, 0.9383 changed; 852 MB -> 418.4 MB in 12
+ckpt_step001400.delta 418788268 encoded 35 tensors, 425,984,000 values, 0.9386 changed; 852 MB -> 418.8 MB in 12
+ckpt_step001500.delta 419095288 encoded 35 tensors, 425,984,000 values, 0.9388 changed; 852 MB -> 419.1 MB in 12
+ckpt_step001518.delta 419146268 encoded 35 tensors, 425,984,000 values, 0.9389 changed; 852 MB -> 419.1 MB in 12

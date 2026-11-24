@@ -1,0 +1,217 @@
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index 0ae2c7f8bd..f1b20530d1 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -3726,6 +3726,21 @@ class Scheduler(
+             if self.dllm_config is not None and last_batch.reqs:
+                 chunked_req_to_exclude.update(last_batch.reqs)
+ 
++            # agi2 session fork (SGLANG_AGI2_SESSION_FORK): a template's one-token turn ends at its prefill. Under the
++            # overlap loop its result is not processed yet, so merging it here would launch a decode step that commits
++            # the sampled token into its state; kept out, its prefill result finishes it at exactly its prompt.
++            from sglang.srt.session import streaming_session as _agi2_ss
++
++            if _agi2_ss._AGI2_SESSION_FORK:
++                for _r in last_batch.reqs:
++                    _s = getattr(_r, "session", None)
++                    if (
++                        _s is not None
++                        and _agi2_ss._TMPL_TAG in str(getattr(_s, "session_id", ""))
++                        and _r.sampling_params.max_new_tokens == 1
++                    ):
++                        chunked_req_to_exclude.add(_r)
++
+             # Filter batch
+             last_bs = last_batch.batch_size()
+             last_batch.filter_batch(chunked_req_to_exclude=list(chunked_req_to_exclude))
+diff --git a/python/sglang/srt/session/streaming_session.py b/python/sglang/srt/session/streaming_session.py
+index 35cc0a1ebf..5d5eb3b0b8 100644
+--- a/python/sglang/srt/session/streaming_session.py
++++ b/python/sglang/srt/session/streaming_session.py
+@@ -34,6 +34,16 @@ if TYPE_CHECKING:
+ 
+ logger = logging.getLogger(__name__)
+ 
++# agi2 (SGLANG_AGI2_SESSION_FORK, off by default): a task prompt prefilled once is reused by every attempt. A template
++# session (its id contains _TMPL_TAG) runs the shared prompt prefix once and is parked; a session whose id is
++# "<template id>" + _FORK_TAG + "<anything>" restores a copy of that parked state on its first turn when its tokens
++# start with the template's history, instead of prefilling it. The template keeps its host copy (and its bytes) for
++# the next fork. The copy is what park/restore already move: the history's KV, compressed index keys, the mamba slot
++# (conv + SSM state) and the per-row rings (park hooks), so a fork resumes exactly where a resident turn would.
++_AGI2_SESSION_FORK = __import__("os").environ.get("SGLANG_AGI2_SESSION_FORK", "0").lower() in ("1", "true")
++_TMPL_TAG = ".tmpl."
++_FORK_TAG = ".fork."
++
+ 
+ class _VirtualNode:
+     """Sentinel node for streaming session requests.
+@@ -113,6 +123,11 @@ class ParkedState:
+     record: ReqKvInfo  # the slot's KV record as it was (its scalar fields go back on the restored record)
+     nbytes: int
+     parked_at: float = 0.0
++    ids: Optional[List[int]] = None  # agi2 session fork: the history's token ids (template sessions only)
++    # agi2 session fork: fork slots that hold this state lent and not yet restored, and whether its template released
++    # it meanwhile (its host bytes then stay counted until the last borrower restores or drops it)
++    borrowers: int = 0
++    orphaned: bool = False
+ 
+ 
+ class DraftRingParkHook:
+@@ -187,6 +202,10 @@ class SessionSlot:
+     # Order of the last finished turn among all sessions (evict_idle_session: least recently finished first). A count,
+     # not a clock, so every TP rank picks the same session.
+     saved_seq: int = 0
++    # agi2 session fork: a template's committed token ids (kept for its park), and whether `parked` is a template's
++    # state lent to this fork (not this slot's own host bytes)
++    agi2_ids: Optional[List[int]] = None
++    agi2_fork: bool = False
+ 
+     def save_from_req(self, req: Req, is_first: bool):
+         """Save KV state from a finishing request into this slot."""
+@@ -343,6 +362,10 @@ class StreamingSession(BasePrefixCache):
+     def try_match_prefix(self, params: MatchPrefixParams) -> Optional[MatchResult]:
+         """Returns a MatchResult iff the request hits an active session slot;
+         otherwise None (caller falls back to its raw match)."""
++        if _AGI2_SESSION_FORK:
++            fork = self._agi2_fork_slot(params)
++            if fork is not None:
++                return self._match_parked(params, fork)
+         parked = self._parked_slot(params.req)
+         if parked is not None:
+             return self._match_parked(params, parked)
+@@ -498,6 +521,13 @@ class StreamingSession(BasePrefixCache):
+         # verify by ~1, which would short-change inheritance). Clamp to allocated
+         # to keep committed <= allocated for prepare_for_decode.
+         slot.kv.kv_committed_len = min(target, slot.kv.kv_allocated_len)
++        if _AGI2_SESSION_FORK and _TMPL_TAG in session_id:
++            # a template's committed history as token ids, for the forks' prefix check after it is parked
++            c = slot.kv.kv_committed_len
++            ids = list(req.origin_input_ids[:c])
++            if len(ids) < c:
++                ids += list(req.output_ids[: c - len(ids)])
++            slot.agi2_ids = ids if len(ids) == c else None
+ 
+         # Update req_nodes to this successfully finished request.
+         req.session.finish_req(req)
+@@ -511,7 +541,9 @@ class StreamingSession(BasePrefixCache):
+         if not _is_streaming(req):
+             return
+         slot = self.slots.get(req.session.session_id)
+-        if slot is not None and req.kv is slot.kv:
++        if slot is not None and slot.agi2_fork and slot.parked is not None:   # a tentative fork: roll it back
++            self._agi2_drop_fork(req.session.session_id, slot)
++        elif slot is not None and req.kv is slot.kv:
+             req.detach_kv()
+         req.session.abort_req()
+         req.session = None
+@@ -646,7 +678,12 @@ class StreamingSession(BasePrefixCache):
+         if slot is None:
+             return
+         if slot.parked is not None:  # its state is on the host: dropping the copy frees it
+-            self.parked_bytes -= slot.parked.nbytes
++            if slot.agi2_fork:  # a fork's lent state stays its template's
++                self._agi2_unborrow(slot.parked)
++            elif slot.parked.borrowers > 0:  # forks still hold it: its bytes stay counted until the last lets go
++                slot.parked.orphaned = True
++            else:
++                self.parked_bytes -= slot.parked.nbytes
+             logger.info(
+                 "Parked session released: %s (%d tokens, %.1f MB host)",
+                 session_id,
+@@ -976,7 +1013,8 @@ class StreamingSession(BasePrefixCache):
+         self._free_slot_mamba(slot)
+         slot.kv = ReqKvInfo()
+         slot.parked = ParkedState(
+-            n=n, kv_cpu=kv_cpu, extra=extra, record=record, nbytes=nbytes, parked_at=time.time()
++            n=n, kv_cpu=kv_cpu, extra=extra, record=record, nbytes=nbytes, parked_at=time.time(),
++            ids=slot.agi2_ids[:n] if slot.agi2_ids is not None and len(slot.agi2_ids) >= n else None,
+         )
+         self.parked_bytes += nbytes
+         ms = (time.perf_counter() - t0) * 1e3
+@@ -998,11 +1036,62 @@ class StreamingSession(BasePrefixCache):
+             return None
+         return slot
+ 
++    def _agi2_fork_slot(self, params: MatchPrefixParams) -> Optional[SessionSlot]:
++        """agi2 session fork: the first turn of a session named "<template id>.fork.<n>" whose template is parked with
++        its token ids and whose own tokens start with them gets a slot that lends it the template's parked state;
++        _match_parked then makes the history a host hit and _restore_parked copies it into a row of its own. Anything
++        else (no template, not parked, other tokens, a later turn) returns None: the turn prefills as before."""
++        req = params.req
++        if not _is_streaming(req):
++            return None
++        sid = req.session.session_id
++        if sid in self.slots or _FORK_TAG not in sid:
++            return None
++        src = self.slots.get(sid[: sid.index(_FORK_TAG)])
++        if src is None or src.parked is None or src.parked.ids is None:
++            return None
++        ids = src.parked.ids
++        n = len(ids)
++        if not self._agi2_fork_tokens_ok(params, ids):
++            logger.info("Session fork refused: %s (%d template tokens, %d in the turn)", sid, n, len(params.key))
++            return None
++        slot = SessionSlot(parked=src.parked, agi2_fork=True)
++        src.parked.borrowers += 1
++        self.slots[sid] = slot
++        logger.info("Session fork: %s takes %d tokens from its parked template", sid, n)
++        return slot
++
++    def _agi2_unborrow(self, p: ParkedState) -> None:
++        """A fork slot lets go of its template's lent state (restored or dropped)."""
++        p.borrowers = max(0, p.borrowers - 1)
++        if p.orphaned and p.borrowers == 0:   # the template already released it: its bytes go now
++            self.parked_bytes -= p.nbytes
++            p.orphaned = False
++
++    def _agi2_drop_fork(self, session_id: str, slot: SessionSlot) -> None:
++        """Roll back a tentative fork slot (lent state, nothing restored): its session's next turn checks again."""
++        if self.slots.get(session_id) is slot and slot.agi2_fork and slot.parked is not None:
++            self._agi2_unborrow(slot.parked)
++            del self.slots[session_id]
++            logger.info("Session fork rolled back: %s", session_id)
++
++    @staticmethod
++    def _agi2_fork_tokens_ok(params: MatchPrefixParams, ids: Optional[List[int]]) -> bool:
++        n = len(ids) if ids is not None else 0
++        return n > 0 and len(params.key) >= n and list(params.key.token_ids[:n]) == ids
++
+     def _match_parked(self, params: MatchPrefixParams, slot: SessionSlot) -> Optional[MatchResult]:
+         """A parked session's next turn: its history is a host hit. The adder budgets it like a prefill of the
+         history and, only for a request it admits, calls init_load_back, which copies it back."""
+         req = params.req
++        if slot.agi2_fork and not self._agi2_fork_tokens_ok(params, slot.parked.ids):
++            # a lent template state is only for a turn that starts with its exact tokens (a retry after a queued
++            # abort may send others): roll the tentative fork back; the turn prefills as a new session's would
++            self._agi2_drop_fork(req.session.session_id, slot)
++            return None
+         if req.to_finish is not None:  # pre-aborted (find_active_slot's rule); the parked state waits for the next turn
++            if slot.agi2_fork:
++                self._agi2_drop_fork(req.session.session_id, slot)
+             req.session.abort_req()
+             req.session = None
+             return None
+@@ -1064,6 +1153,8 @@ class StreamingSession(BasePrefixCache):
+             hook.load(row, data)
+         kv = dataclasses.replace(
+             p.record,
++            # agi2: a restored record gets its own eviction map (a template's state is restored once per fork)
++            component_evicted_seqlens=dict(p.record.component_evicted_seqlens),
+             req_pool_idx=row,
+             cache_protected_len=0,
+             kv_committed_len=n,
+@@ -1075,7 +1166,13 @@ class StreamingSession(BasePrefixCache):
+         )
+         slot.kv = kv
+         slot.parked = None
+-        self.parked_bytes -= p.nbytes
++        if slot.agi2_fork:  # a template's state lent to this fork: the template keeps its host copy and its bytes
++            slot.agi2_fork = False
++            self._agi2_unborrow(p)
++        elif p.borrowers > 0:   # a template resuming while forks still hold its state: bytes go with the last fork
++            p.orphaned = True
++        else:
++            self.parked_bytes -= p.nbytes
+         slot.restore_to_req(req)
+         if want < n:  # the resident path's rule: positions past the match are freed (_free_tail)
+             self._free_tail(kv, want)

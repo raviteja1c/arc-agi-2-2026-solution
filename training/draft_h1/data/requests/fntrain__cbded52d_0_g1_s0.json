@@ -1,0 +1,1 @@
+{"spans": [[3343, 11970], [13997, 14906], [15013, 15685], [15721, 16778], [16801, 16974], [17184, 17301], [17693, 18663], [19044, 25109], [25453, 27571]], "temperature": 1.0, "aid": "cbded52d_0_g1_s0", "task": "cbded52d", "tokens": 27571, "gen": 20708, "src": "runs/10/25/1025_2055_colab-g4-fntrain-harness/bench\\fn_g4_fntrain_b196k_lp_dfg\\lp\\cbded52d_0_g1_s0.npz"}

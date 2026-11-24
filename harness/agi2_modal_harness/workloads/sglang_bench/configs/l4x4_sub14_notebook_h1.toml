@@ -1,0 +1,128 @@
+# SUB 14 NOTEBOOK (2026-10-26, the long-run study docs/reports/1026_1244_longrun_sub14): for harness_nb's profile
+# 1026-sub14-qwen38-flashnext-blocktier16-h1, which launches the server from the notebook's own launch_server.sh.
+# Only model_alias (RadixArk NVFP4 7b719225242a, as Kaggle's hf-7b719225242a), draft_alias (h1, sha 9a064a9068f9,
+# as Kaggle's agi2-h1-s1500-9a064a9068f9) and [compute] are read there; the flags below are the copied source's
+# (l4x4_flashnext_nvfp4_prune384code_16slots_kvpool_tuned_bf16head_loadopt_dflash2_mf90.toml) and are NOT used.
+# Written by runs/plans/1026_longrun_sub14/make_config.py.
+# MF90 (2026-10-25 20:20 IST, decode-3x campaign): this config with mem_fraction_static 0.92 -> 0.90 (~0.44 GB a rank more
+# headroom) and SGLANG_MM_ENCODE_MAX_TOKENS 4096 (the vision encode budget the other harness configs set, fork
+# agi2/feat/mm-encode-budget). The 16-slot block-tier round 1025_1906 ran out of GPU memory at minute 60 (vision encoder in a prefill,
+# 31 MiB free on ranks 1/3) after starting with ~0.6 GiB free; the tier's device rows shrink ~10-13 % in exchange.
+# CONCURRENCY SWEEP (2026-10-25, decode-3x campaign, docs/reports/1025_1016_fn_decode_3x): the baseline's
+# config at 16 slots: 18 request rows, decode graphs 1 2 3 4 5 6 7 8 10 12 14 16, 20 mamba slots.
+# Made by make_slots_config.py; measurement only (step time and tok/s against requests in flight).
+#
+# BF16 LM_HEAD (2026-10-24, the next 4 x L4 build; docs/TODO.md "L4 on the 13 hard v2b1 tasks", decided ~19:25 IST):
+# the final K384 tuned config with the loader settings below, with the FP8 lm_head flags removed, so the lm_head stays
+# BF16. The int8 + DOWNQ sm_reduce all-reduce is kept. Why: the FP8 head is the one lossy piece with measured drift (P6
+# against the full model 0.0414 -> 0.0477, 1023_0631) and buys only +3.9 % throughput and +3.3 % pool; arm B
+# (1024_1605, fully exact) ran this head at 12 slots. Exp 1 (docs/reports/1024_2111_exp1_v2b3) is its first round.
+#
+# LOADER SETTINGS (2026-10-24, docs/reports/1024_1318_weight_loading_phase1.md): checkpoint prefetch, 2 loader
+# threads and exact pinned sizing appended below; the served weights are unchanged.
+#
+# FINAL RUN, BRANCH K384 (2026-10-23 22:10, docs/reports/1023_1732_flashnext_kv_pool): the 12-slot tuned config with
+# the code-aware 384-expert keep list (keep_384_code_bal4.json, P14-validated in 1023_1033): +16 experts a layer a
+# rank, ~+1.98 GiB a rank, pool ~0.99M tokens (estimate) against round c's 678k peak. Gate: the check boot at 12.
+#
+# KV-POOL TUNED (2026-10-23 21:40, docs/reports/1023_1732_flashnext_kv_pool): the full stack below, after its 12-slot
+# round (1023_1917 round-c: KV peaked at ~40 % of the pool, no parks) showed memory is no longer the limit:
+# - graph sizes back to 1-8, 10, 12: in that round 2-7 requests ran for the last ~30 min, and steps padded up to 4 / 8
+#   ran 50-70 ms against round 1308's 40-57.5 ms at the same batch;
+# - mem_fraction_static 0.93 -> 0.92: pays for the graphs (~0.26 GB) and widens the DFlash draft-graph margin;
+# - round 1654's QSA speed levers (SGLANG_AGI2_QSA_IDX_GPC 16, _IDX_STAGES 1, _DIRECT_SPARSE 1; -17 % a step without
+#   the pair split, never tested with it).
+# Gate: P0 "draft cuda graph captured", P6 against A_base, P14, before any round uses it (comm/kv_tuned_ab.sh).
+#
+# KV-POOL FULL STACK (2026-10-23 18:20, docs/reports/1023_1732_flashnext_kv_pool): the kvpool variant below plus
+# - the QSA pair layer split (SGLANG_AGI2_QSA_PAIR_LAYER_SPLIT, fork 62ccaec1de, diff kv_02): the two ranks sharing a
+#   KV head take turns owning the QSA layers, so each stores 6 layers of KV: 3,456 B a token instead of 6,912;
+# - K2's exact reserve cuts: SGLANG_FLASHINFER_WORKSPACE_SIZE 96 MiB (only the draft plans with it),
+#   SGLANG_VLM_CACHE_SIZE_MB 0 (a never-allocated budget), --cuda-graph-bs-decode 4 8 10 12; and mem_fraction_static
+#   0.915 -> 0.93, a little under the post-pool GiB those cuts free (free memory at serving start stays ~0.76 GiB; the DFlash
+#   draft graph needs >= 1.0 GB free after the target graphs: check P0's "draft cuda graph captured").
+# - the vision blocks in pinned host RAM (SGLANG_AGI2_FN_VISION_HOST_BLOCKS, fork 1a638c3f90, diff kv_03).
+# Validated by arms D_pls / C_park (1023_1807) and E_res (1023_1818, kv_reserve_ab.sh) before any round uses it.
+#
+# KV-POOL VARIANT (2026-10-23 18:00, docs/reports/1023_1732_flashnext_kv_pool): the round's server
+# (l4x4_flashnext_nvfp4_prune320code_12slots_dflash2.toml, round 1023_1308) with three memory levers, nothing else:
+# - the GDN ReplaySSM fold (--enable-linear-replayssm-spec + SGLANG_ENABLE_GDN_REPLAYSSM_FOLD): no speculative
+#   intermediate_ssm_state_cache, 1.58 GiB a rank at 14 rows x 4 draft tokens; needs fork diff kv_01 (the PLE
+#   roll-forward after a ReplaySSM commit, agi2/feat/fn-kvpool f5b75f5335);
+# - session host park (SGLANG_ENABLE_STREAMING_SESSION_PARK, 16 GB of host RAM a rank): the harness KV gate's parks
+#   copy a session to host RAM instead of closing it; needs kv_01's QSA park (index keys, pending ring, page-64
+#   restore, cc95e1c340);
+# - 18 GDN state slots instead of 26: today's three rounds peaked at 12 (mamba usage 0.46 of 26).
+# Rounds use comm/kv_round.sh (its slots check asks mamba slots >= slots + 4, not fn_l4_slots_check's 2 x slots + 2).
+#
+# CODE-AWARE KEEP LIST (2026-10-23): the copy of l4x4_flashnext_nvfp4_prune320bal_12slots_dflash2.toml with
+# keep_320_code_bal4.json: the top-320 experts per layer by max(prose share, code share) over boot 8's prose census and
+# 1023_0916's code census (comm/fn_l4_merge_census.py), 96.2 % of prose and 95.7 % of code routing. The prose-only list
+# (91.8 % of code) broke code: 1023_0902, 18 of 24 code answers broken; this list 2 of 24 (1023_1033), unpruned 3.
+# Qwen3.8-Flash-Next (RadixArk NVFP4) on 4 x L4, the 12-slot variant (Modal box v8n, cards experiments/10/23/1023_0554
+# and 1023_0614). Experiment-only: nothing on the Kaggle or 27B path names it. Same server as
+# l4x4_flashnext_nvfp4_prune384_dflash2.toml (read its header) with three changes:
+# - 320 routed experts per layer (census coverage 97.4 %), in a census-balanced EP placement (keep_320_bal4.json, from
+#   comm/fn_l4_balance_keep.py; SGLANG_AGI2_FN_EXPERT_KEEP_ANY_ORDER; diff fn_l4_14 or later);
+# - 12 slots, 26 mamba slots, verify graphs to bs 12;
+# - mem_fraction_static 0.915: at 0.92 only 0.98 GB stays free after the target's graphs and DFlash silently runs its
+#   draft eager (< 1.0 GB, dflash_worker_v2.py:829; boot 27: ~14 ms a step lost).
+# Measured (boot 28, 1023_0614): pool 569,536 tokens; 71.5 ms per verify step and 464.7 tok/s at 12 requests (57.3 /
+# 367.3 at 8); 10 sessions of ~46k tokens all run at once (P13 302 s, against 611 s at 8 slots / 384 experts).
+# Fidelity on P6 against the full 512-expert model: mean |dlogprob| 0.048, argmax 96.2 % (384 experts: 0.035 /
+# 96.9 %; the boot-to-boot floor is ~0.024 / 97.7 %); the sequence's mean logprob does not fall.
+slug = "l4x4-sub14-notebook-h1"
+model_alias = "qwen3.8-flash-next-nvfp4-radixark"
+served_name = "qwen3.8-flash-next"
+subset = "pilot30"
+budget_usd = 30.0
+same_host = true
+
+[greedy]
+prompts = 0
+max_new_tokens = 64
+
+[snapshot]
+enabled = false
+
+[sampling]
+reasoning_effort = "xhigh"
+temperature = 1.0
+top_p = 0.95
+top_k = 20
+
+[server]
+tp = 4
+mem_fraction_static = 0.90
+context_length = 262144
+# 14 = the harness's 12 slots + 2 spare request rows. A resting streaming session holds its request row between turns,
+# and admission checks for a free row first (scheduler.get_num_allocatable_reqs), so at 12 the round ran 6.4 of 12 on
+# average with 5.6 queued (1023_0818). Same rule as the G4 harness config.
+max_running_requests = 18
+chunked_prefill_size = 1024
+disable_radix_cache = true
+mamba_ssm_dtype = "float32"
+kv_cache_dtype = "fp8_e4m3"
+decode_log_interval = 200
+extra_args = ["--ep-size", "4", "--quantization", "modelopt_fp4", "--fp4-gemm-backend", "marlin",
+              "--moe-runner-backend", "marlin", "--page-size", "64", "--ple-offload-embedding",
+              "--cuda-graph-max-bs-decode", "16", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10", "12", "14", "16", "--max-mamba-cache-size", "20", "--min-free-slots-delay", "1",
+              "--enable-linear-replayssm-spec",
+              "--disable-prefill-cuda-graph", "--linear-attn-verify-backend", "triton", "--tool-call-parser",
+              "qwen3_coder", "--image-processor-backend", "pil", "--enable-streaming-session", "--weight-loader-prefetch-checkpoints", "--model-loader-extra-config", "{\"num_threads\": 2}"]
+env = { PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True,pinned_max_round_threshold_mb:1024", SGLANG_MM_ENCODE_MAX_TOKENS = "4096", SGLANG_ENABLE_GDN_REPLAYSSM_FOLD = "1", SGLANG_AGI2_QSA_PAIR_LAYER_SPLIT = "1", SGLANG_AGI2_FN_VISION_HOST_BLOCKS = "1", SGLANG_FLASHINFER_WORKSPACE_SIZE = "100663296", SGLANG_VLM_CACHE_SIZE_MB = "0", SGLANG_AGI2_FN_EXPERT_KEEP = "/vol/cache/dev/fn_keep/keep_384_code_bal4.json", SGLANG_AGI2_FN_EXPERT_KEEP_ANY_ORDER = "1", SGLANG_AGI2_HOST_EMBED = "1", SGLANG_AGI2_MARLIN_NO_SWIZZLED = "1", SGLANG_AGI2_MARLIN_INPLACE_REPACK = "1", SGLANG_AGI2_QSA_TRITON_DECODE = "1", SGLANG_LOGPROB_CHUNK_SIZE = "128", SGLANG_DFLASH_DRAFT_WINDOW_KV = "1", SGLANG_AGI2_DRAFT_WINDOW_KV_PAGED = "1", SGLANG_ENABLE_SM_REDUCE_ALLREDUCE = "1", SGLANG_SM_REDUCE_FMT = "int8", SGLANG_SM_REDUCE_DOWNQ = "1", SGLANG_SM_REDUCE_THREADS = "4", SGLANG_SM_REDUCE_CHUNK_KB = "64", SGLANG_SM_REDUCE_PUBWARP = "1", SGLANG_ENABLE_DFLASH_SHARDED_VERIFY = "1", SGLANG_AGI2_VERIFY_TAIL = "1", SGLANG_AGI2_EARLY_PUBLISH = "1", SGLANG_AGI2_DFLASH_PINNED_NTNP = "1", SGLANG_AGI2_SWA_ONLY_WRAPPER0 = "1", SGLANG_AGI2_QSA_IDX_GPC = "16", SGLANG_AGI2_QSA_IDX_STAGES = "1", SGLANG_AGI2_QSA_DIRECT_SPARSE = "1" }
+
+[compute]
+gpu = "L4:4"
+cpu = 8.0
+memory_mib = 131072
+timeout_hours = 6.0
+boot_timeout_min = 45
+
+# The harness arm: DFlash2 + streaming sessions with QSA's misaligned-prefix and two-group pending ring.
+[[arms]]
+name = "harness"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_ENABLE_STREAMING_SESSION_RETRACT = "1", SGLANG_ENABLE_STREAMING_SESSION_EVICT = "1", SGLANG_ENABLE_STREAMING_SESSION_PARK = "1", SGLANG_STREAMING_SESSION_PARK_HOST_GB = "16", SGLANG_AGI2_QSA_SESSION_PREFIX = "1", SGLANG_AGI2_QSA_RING2 = "1", SGLANG_ENABLE_DFLASH_LENGTH_CAP = "1", SGLANG_ENABLE_DFLASH_STOP_CAP = "1", SGLANG_ENABLE_STREAMING_SESSION_FOLDED_CLAIM = "1" }

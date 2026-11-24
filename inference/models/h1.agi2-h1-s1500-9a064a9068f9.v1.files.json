@@ -1,0 +1,11 @@
+{
+ "files": {
+  "AGI2_PROVENANCE.md": 2199,
+  "README.md": 5402,
+  "assets/dflash2-figure.png": 286889,
+  "config.json": 1236,
+  "model.safetensors": 1206140040,
+  "patches/qwen38-dflash2-capture.patch": 2642
+ },
+ "handle": "carriem7/qwen3-8-flash-next-dflash2/transformers/agi2-h1-s1500-9a064a9068f9/1"
+}

@@ -1,0 +1,22 @@
+# Deliberately narrow: no pattern here may match a file this repository holds (GitHub's default Python template
+# would hide *.manifest, MANIFEST, *.spec, build/, dist/, lib/ and wheels/, names used here).
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Local inputs and outputs that never belong in the repository: the competition's data, model weights, credentials
+/data/
+/models/
+*.safetensors
+kaggle.json
+.env
+.env.*
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

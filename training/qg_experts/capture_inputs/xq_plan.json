@@ -1,0 +1,206 @@
+{
+ "source": "runs/10/25/1025_1926_colab-g4-dflash2-ft/harness_h1",
+ "seed": 1029,
+ "phases": {
+  "calib": {
+   "histories": [
+    {
+     "name": "fntrain__c9f8e694_0_g1_s0",
+     "task": "c9f8e694",
+     "tokens": 9277
+    },
+    {
+     "name": "fntrain__e760a62e_0_g1_s0",
+     "task": "e760a62e",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__e048c9ed_0_g1_s0",
+     "task": "e048c9ed",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__ce9e57f2_0_g1_s0",
+     "task": "ce9e57f2",
+     "tokens": 9262
+    },
+    {
+     "name": "fntrain__15663ba9_0_g1_s0",
+     "task": "15663ba9",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__689c358e_0_g1_s0",
+     "task": "689c358e",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__9edfc990_0_g1_s0",
+     "task": "9edfc990",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__f45f5ca7_0_g1_s0",
+     "task": "f45f5ca7",
+     "tokens": 15140
+    },
+    {
+     "name": "fntrain__bda2d7a6_0_g1_s0",
+     "task": "bda2d7a6",
+     "tokens": 9773
+    },
+    {
+     "name": "fntrain__42f83767_0_g1_s0",
+     "task": "42f83767",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__3bd67248_0_g1_s0",
+     "task": "3bd67248",
+     "tokens": 6213
+    },
+    {
+     "name": "fntrain__12997ef3_0_g1_s0",
+     "task": "12997ef3",
+     "tokens": 14925
+    },
+    {
+     "name": "fntrain__ed36ccf7_0_g1_s0",
+     "task": "ed36ccf7",
+     "tokens": 10263
+    },
+    {
+     "name": "fntrain__cc9053aa_0_g1_s0",
+     "task": "cc9053aa",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__df9fd884_0_g1_s0",
+     "task": "df9fd884",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__363442ee_0_g1_s0",
+     "task": "363442ee",
+     "tokens": 10791
+    },
+    {
+     "name": "fntrain__b7fb29bc_0_g1_s0",
+     "task": "b7fb29bc",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__b9b7f026_0_g1_s0",
+     "task": "b9b7f026",
+     "tokens": 9492
+    },
+    {
+     "name": "fntrain__aa18de87_0_g1_s0",
+     "task": "aa18de87",
+     "tokens": 15339
+    },
+    {
+     "name": "fntrain__67636eac_0_g1_s0",
+     "task": "67636eac",
+     "tokens": 10762
+    },
+    {
+     "name": "fntrain__623ea044_0_g1_s0",
+     "task": "623ea044",
+     "tokens": 11575
+    },
+    {
+     "name": "fntrain__99fa7670_0_g1_s0",
+     "task": "99fa7670",
+     "tokens": 6989
+    },
+    {
+     "name": "fntrain__b60334d2_0_g1_s0",
+     "task": "b60334d2",
+     "tokens": 6486
+    },
+    {
+     "name": "fntrain__575b1a71_0_g1_s0",
+     "task": "575b1a71",
+     "tokens": 12158
+    },
+    {
+     "name": "fntrain__1a07d186_0_g1_s0",
+     "task": "1a07d186",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__b745798f_0_g1_s0",
+     "task": "b745798f",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__7d18a6fb_0_g1_s0",
+     "task": "7d18a6fb",
+     "tokens": 16000
+    }
+   ],
+   "tokens": 350445,
+   "tasks": [
+    "12997ef3",
+    "15663ba9",
+    "1a07d186",
+    "363442ee",
+    "3bd67248",
+    "42f83767",
+    "575b1a71",
+    "623ea044",
+    "67636eac",
+    "689c358e",
+    "7d18a6fb",
+    "99fa7670",
+    "9edfc990",
+    "aa18de87",
+    "b60334d2",
+    "b745798f",
+    "b7fb29bc",
+    "b9b7f026",
+    "bda2d7a6",
+    "c9f8e694",
+    "cc9053aa",
+    "ce9e57f2",
+    "df9fd884",
+    "e048c9ed",
+    "e760a62e",
+    "ed36ccf7",
+    "f45f5ca7"
+   ]
+  },
+  "gate": {
+   "histories": [
+    {
+     "name": "fntrain__1acc24af_0_g1_s0",
+     "task": "1acc24af",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__17b866bd_0_g1_s0",
+     "task": "17b866bd",
+     "tokens": 16000
+    },
+    {
+     "name": "fntrain__77fdfe62_0_g1_s0",
+     "task": "77fdfe62",
+     "tokens": 7460
+    },
+    {
+     "name": "fntrain__82819916_0_g1_s0",
+     "task": "82819916",
+     "tokens": 12836
+    }
+   ],
+   "tokens": 52296,
+   "tasks": [
+    "17b866bd",
+    "1acc24af",
+    "77fdfe62",
+    "82819916"
+   ]
+  }
+ }
+}

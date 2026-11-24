@@ -1,0 +1,1 @@
+{"spans": [[7397, 8387], [9233, 9633], [10002, 10407], [10532, 11397], [12095, 12847], [12930, 13164], [13566, 15665], [15786, 18386]], "temperature": 1.0, "aid": "8efcae92_0_g1_s0", "task": "8efcae92", "tokens": 18386, "gen": 8345, "src": "runs/10/25/1025_2055_colab-g4-fntrain-harness-b/bench\\fn_g4_fntrain_b196k_lp_dft\\lp\\8efcae92_0_g1_s0.npz"}

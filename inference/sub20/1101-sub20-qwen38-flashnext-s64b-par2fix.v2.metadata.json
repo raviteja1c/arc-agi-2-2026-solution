@@ -1,0 +1,32 @@
+{
+ "author": "Ravi Teja Chilakala",
+ "categoryIds": [
+  "gpu"
+ ],
+ "competitionDataSources": [
+  "arc-prize-2026-arc-agi-2"
+ ],
+ "currentVersionNumber": 2,
+ "dockerImage": "gcr.io/kaggle-private-byod/python@sha256:9a6bcfda6d03b2cd9aa347ee8c1bae62043328ed0f4afe9bda014e4f8bbf9435",
+ "enableGpu": true,
+ "enableInternet": false,
+ "enableTpu": false,
+ "id": 142003638,
+ "isPrivate": false,
+ "kernelDataSources": [
+  "carriem7/1006-sglang-runtime-cp312",
+  "carriem7/1101-seed-flashnext-sub20-s64b-t8"
+ ],
+ "kernelType": "notebook",
+ "language": "python",
+ "lastRunTime": "2026-11-11T07:40:31.414Z",
+ "machineShape": "NvidiaL4",
+ "modelDataSources": [
+  "carriem7/qwen3-8-flash-next-dflash2/Transformers/agi2-h1-s1500-9a064a9068f9/1",
+  "carriem7/qwen3-8-flash-next-nvfp4/Transformers/hf-7b719225242a/1",
+  "carriem7/qwen3-8-flash-next-nvfp4-qg1/Transformers/agi2-qg1-8352943a271b/1"
+ ],
+ "ref": "carriem7/1101-sub20-qwen38-flashnext-s64b-par2fix",
+ "slug": "1101-sub20-qwen38-flashnext-s64b-par2fix",
+ "title": "1101 sub20 qwen38 flashnext s64b par2fix"
+}

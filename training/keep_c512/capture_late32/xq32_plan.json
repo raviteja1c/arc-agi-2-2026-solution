@@ -1,0 +1,91 @@
+{
+ "source": "runs/10/25/1025_1926_colab-g4-dflash2-ft/harness_h1",
+ "seed": 1030,
+ "cap": 32000,
+ "phases": {
+  "late32": {
+   "histories": [
+    {
+     "name": "fntrain__4e7e0eb9_0_g1_s0",
+     "task": "4e7e0eb9",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__4e45f183_0_g1_s0",
+     "task": "4e45f183",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__44f52bb0_0_g1_s0",
+     "task": "44f52bb0",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__1b8318e3_0_g1_s0",
+     "task": "1b8318e3",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__fd096ab6_0_g1_s0",
+     "task": "fd096ab6",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__b457fec5_0_g1_s0",
+     "task": "b457fec5",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__712bf12e_0_g1_s0",
+     "task": "712bf12e",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__880c1354_0_g1_s0",
+     "task": "880c1354",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__e048c9ed_0_g1_s0",
+     "task": "e048c9ed",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__a6953f00_0_g1_s0",
+     "task": "a6953f00",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__9f669b64_0_g1_s0",
+     "task": "9f669b64",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__bc93ec48_0_g1_s0",
+     "task": "bc93ec48",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__9110e3c5_0_g1_s0",
+     "task": "9110e3c5",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__7d419a02_0_g1_s0",
+     "task": "7d419a02",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__b74ca5d1_0_g1_s0",
+     "task": "b74ca5d1",
+     "tokens": 32000
+    },
+    {
+     "name": "fntrain__9edfc990_0_g1_s0",
+     "task": "9edfc990",
+     "tokens": 32000
+    }
+   ]
+  }
+ }
+}

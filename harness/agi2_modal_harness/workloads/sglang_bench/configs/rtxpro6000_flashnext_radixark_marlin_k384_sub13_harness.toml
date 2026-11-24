@@ -1,0 +1,67 @@
+# G4 only (memory g4-changes-isolated): Qwen3.8-Flash-Next (RadixArk NVFP4, BF16 lm_head) on one Colab G4 with
+# submission 13's numerics for harness DATA rounds (decode-3x campaign, DFlash2 line, card 1025_1926): the DFlash2
+# draft's fine-tune needs Flash-Next's own harness conversations on ARC-AGI-2 training tasks at the served
+# distribution. Built on rtxpro6000_flashnext_nvfp4_dflash2_harness_fp8kv_fp32_ring.toml (the 10-22 G4 rounds), with
+# what submission 13 serves on 4 x L4 and a G4 TP1 server can take:
+# - Marlin W4A16 FP4 GEMM and MoE (the 4 x L4's numerics, as the DFlash2 probe and capture on G4 run them; the G4's
+#   native W4A4 would be a different target distribution);
+# - the K384 code keep list (SGLANG_AGI2_FN_EXPERT_KEEP, the list submission 13 serves; staged at
+#   /content/inputs/keep_384_code_bal4.json);
+# - fn-conf on (SGLANG_AGI2_FN_CONF=1 is passed by the round as K=V with LOGPROBS=1), logprob chunk 128 as sub 13;
+# - the submission 13 build (sglang-v0.5.21-to-sub13-e5cb6d9.diff + the probe diff, off) installed by probe_setup.sh.
+# Left out: what only 4 x L4 needs (EP, sm_reduce, the Marlin repack switches, QSA's sm_89 decode levers, CUDA graph
+# buckets). Served on the FULL vision-language model for g1's pictures (fn_round.sh's TARGET_DIR default).
+slug = "rtxpro6000-flashnext-radixark-marlin-k384-sub13-harness"
+model_alias = "qwen3.8-flash-next-nvfp4-radixark"
+served_name = "qwen3.8-flash-next"
+subset = "pilot30"
+budget_usd = 30.0
+same_host = true
+
+[greedy]
+prompts = 0
+max_new_tokens = 64
+
+[snapshot]
+enabled = false
+
+[sampling]
+reasoning_effort = "xhigh"
+temperature = 1.0
+top_p = 0.95
+top_k = 20
+
+[server]
+tp = 1
+mem_fraction_static = 0.90
+context_length = 262144
+# 10 = 8 harness slots + 2 spare request rows (resting sessions hold their rows).
+max_running_requests = 10
+chunked_prefill_size = 2048
+disable_radix_cache = true
+mamba_ssm_dtype = "float32"
+kv_cache_dtype = "fp8_e4m3"
+decode_log_interval = 200
+# --max-mamba-cache-size 18 = 8 resting sessions + 8 running turns + 2 spare.
+extra_args = ["--quantization", "modelopt_fp4", "--fp4-gemm-backend", "marlin", "--moe-runner-backend", "marlin",
+              "--page-size", "64", "--ple-offload-embedding",
+              "--cuda-graph-max-bs-decode", "10", "--max-mamba-cache-size", "18", "--min-free-slots-delay", "1",
+              "--enable-linear-replayssm-spec", "--disable-prefill-cuda-graph", "--linear-attn-verify-backend", "triton",
+              "--tool-call-parser", "qwen3_coder", "--image-processor-backend", "pil"]
+env = { PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True", SGLANG_ENABLE_GDN_REPLAYSSM_FOLD = "1", SGLANG_AGI2_FN_EXPERT_KEEP = "/content/inputs/keep_384_code_bal4.json", SGLANG_AGI2_FN_EXPERT_KEEP_ANY_ORDER = "1", SGLANG_LOGPROB_CHUNK_SIZE = "128", SGLANG_DFLASH_DRAFT_WINDOW_KV = "1", SGLANG_AGI2_DRAFT_WINDOW_KV_PAGED = "1", SGLANG_MM_ENCODE_MAX_TOKENS = "4096" }
+
+[compute]
+gpu = "RTX-PRO-6000"
+cpu = 12.0
+memory_mib = 98304
+timeout_hours = 6.0
+boot_timeout_min = 40
+
+# The harness arm as submission 13's: DFlash2 at 4 draft tokens + streaming sessions with QSA's misaligned prefix and
+# the two-group pending ring, exact turn boundaries (length and stop caps, folded claim).
+[[arms]]
+name = "harness"
+draft_alias = "dflash2-qwen3.8-flash-next"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--enable-streaming-session"]
+env = { SGLANG_ENABLE_STREAMING_SESSION_RETRACT = "1", SGLANG_ENABLE_STREAMING_SESSION_EVICT = "1", SGLANG_ENABLE_STREAMING_SESSION_PARK = "1", SGLANG_STREAMING_SESSION_PARK_HOST_GB = "48", SGLANG_AGI2_QSA_SESSION_PREFIX = "1", SGLANG_AGI2_QSA_RING2 = "1", SGLANG_ENABLE_DFLASH_LENGTH_CAP = "1", SGLANG_ENABLE_DFLASH_STOP_CAP = "1", SGLANG_ENABLE_STREAMING_SESSION_FOLDED_CLAIM = "1" }

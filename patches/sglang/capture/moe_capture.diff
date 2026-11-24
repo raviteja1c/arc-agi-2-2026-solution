@@ -1,0 +1,95 @@
+diff --git a/python/sglang/srt/layers/moe/agi2_capture.py b/python/sglang/srt/layers/moe/agi2_capture.py
+new file mode 100644
+index 0000000000..461c3b3671
+--- /dev/null
++++ b/python/sglang/srt/layers/moe/agi2_capture.py
+@@ -0,0 +1,68 @@
++"""agi2 (SGLANG_AGI2_MOE_CAPTURE_DIR, off by default): record the routed experts' inputs and the served routing, for
++re-rounding the NVFP4 experts against our own traffic (agi2 docs/reports/1029_1845_nvfp4_rerounding_scope).
++
++FusedMoE.forward calls record() first. It writes only:
++- on global rank 0 (under EP without an all-to-all every rank sees every token and the global top-k ids);
++- outside CUDA-graph capture (prefill runs eager);
++- while <dir>/ARMED exists, whose text is the phase tag (e.g. "calib" or "gate"); it is re-read once per forward,
++  at layer 0.
++Each forward writes <dir>/<tag>/L<layer>/<chunk>.pt = {"x": bf16 [n, hidden], "ids": int16 [n, k], "w": fp16 [n, k]};
++ids are the served (keep-list) expert ids. SGLANG_AGI2_MOE_CAPTURE_LAYERS bounds layer ids (default 48: the target's
++MoE layers). Capture costs a device-to-host copy per layer per forward: never enable it in a measured run.
++"""
++
++from __future__ import annotations
++
++import os
++
++import torch
++
++_DIR = os.environ.get("SGLANG_AGI2_MOE_CAPTURE_DIR", "")
++_MAX_LAYER = int(os.environ.get("SGLANG_AGI2_MOE_CAPTURE_LAYERS", "48"))
++_STATE = {"tag": None, "chunk": 0, "rank0": None}
++
++
++def enabled() -> bool:
++    return bool(_DIR)
++
++
++def _rank0() -> bool:
++    if _STATE["rank0"] is None:
++        import torch.distributed as dist
++
++        _STATE["rank0"] = (not dist.is_initialized()) or dist.get_rank() == 0
++    return _STATE["rank0"]
++
++
++def record(layer_id, hidden_states: torch.Tensor, topk_output) -> None:
++    if layer_id is None or layer_id >= _MAX_LAYER or not _rank0():
++        return
++    if torch.cuda.is_current_stream_capturing():
++        return
++    ids = getattr(topk_output, "topk_ids", None)
++    w = getattr(topk_output, "topk_weights", None)
++    if ids is None or w is None:
++        return
++    if layer_id == 0:
++        try:
++            with open(os.path.join(_DIR, "ARMED")) as f:
++                tag = f.read().strip() or None
++        except FileNotFoundError:
++            tag = None
++        _STATE["tag"] = tag
++        if tag:
++            _STATE["chunk"] += 1
++    tag = _STATE["tag"]
++    n = hidden_states.shape[0]
++    if not tag or n == 0:
++        return
++    d = os.path.join(_DIR, tag, f"L{layer_id:02d}")
++    os.makedirs(d, exist_ok=True)
++    torch.save(
++        {
++            "x": hidden_states.detach().to("cpu", copy=True),
++            "ids": ids[:n].detach().to(torch.int16).cpu(),
++            "w": w[:n].detach().to(torch.float16).cpu(),
++        },
++        os.path.join(d, f"{_STATE['chunk']:07d}.pt"),
++    )
+diff --git a/python/sglang/srt/layers/moe/fused_moe_triton/layer.py b/python/sglang/srt/layers/moe/fused_moe_triton/layer.py
+index 739ad79583..6b665bb71b 100644
+--- a/python/sglang/srt/layers/moe/fused_moe_triton/layer.py
++++ b/python/sglang/srt/layers/moe/fused_moe_triton/layer.py
+@@ -22,6 +22,7 @@ from sglang.srt.distributed.device_communicators.pynccl_allocator import (
+ from sglang.srt.environ import envs
+ from sglang.srt.eplb.expert_location import get_global_expert_location_metadata
+ from sglang.srt.layers.dp_attention import is_allocation_symmetric
++from sglang.srt.layers.moe import agi2_capture as _agi2_capture
+ from sglang.srt.layers.moe import (
+     MoeRunnerConfig,
+     get_deepep_mode,
+@@ -1524,6 +1525,8 @@ class FusedMoE(torch.nn.Module):
+         topk_output: TopKOutput,
+         pre_quant_input: Optional[Tuple] = None,
+     ):
++        if _agi2_capture.enabled():  # agi2: SGLANG_AGI2_MOE_CAPTURE_DIR, off by default
++            _agi2_capture.record(self.layer_id, hidden_states, topk_output)
+         if self._use_ascend_fuseep:
+             from sglang.srt.hardware_backend.npu.moe.fuseep import forward_fuseep
+ 

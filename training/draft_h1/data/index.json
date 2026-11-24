@@ -1,0 +1,1395 @@
+[
+ {
+  "name": "fntrain__0962bcdd_0_g1_s0",
+  "tokens": 9604,
+  "gen": 4950,
+  "T": 1.0,
+  "task": "0962bcdd"
+ },
+ {
+  "name": "fntrain__137eaa0f_0_g1_s0",
+  "tokens": 12044,
+  "gen": 7394,
+  "T": 1.0,
+  "task": "137eaa0f"
+ },
+ {
+  "name": "fntrain__18286ef8_0_g1_s0",
+  "tokens": 16854,
+  "gen": 8354,
+  "T": 1.0,
+  "task": "18286ef8"
+ },
+ {
+  "name": "fntrain__1a07d186_0_g1_s0",
+  "tokens": 16178,
+  "gen": 5138,
+  "T": 1.0,
+  "task": "1a07d186"
+ },
+ {
+  "name": "fntrain__1acc24af_0_g1_s0",
+  "tokens": 168305,
+  "gen": 146981,
+  "T": 1.0,
+  "task": "1acc24af"
+ },
+ {
+  "name": "fntrain__1b8318e3_0_g1_s0",
+  "tokens": 83849,
+  "gen": 70407,
+  "T": 1.0,
+  "task": "1b8318e3"
+ },
+ {
+  "name": "fntrain__1c56ad9f_0_g1_s0",
+  "tokens": 19495,
+  "gen": 9722,
+  "T": 1.0,
+  "task": "1c56ad9f"
+ },
+ {
+  "name": "fntrain__1d61978c_0_g1_s0",
+  "tokens": 38560,
+  "gen": 29491,
+  "T": 1.0,
+  "task": "1d61978c"
+ },
+ {
+  "name": "fntrain__1f0c79e5_0_g1_s0",
+  "tokens": 26051,
+  "gen": 20737,
+  "T": 1.0,
+  "task": "1f0c79e5"
+ },
+ {
+  "name": "fntrain__20818e16_0_g1_s0",
+  "tokens": 18248,
+  "gen": 11930,
+  "T": 1.0,
+  "task": "20818e16"
+ },
+ {
+  "name": "fntrain__2204b7a8_0_g1_s0",
+  "tokens": 18308,
+  "gen": 11814,
+  "T": 1.0,
+  "task": "2204b7a8"
+ },
+ {
+  "name": "fntrain__23581191_0_g1_s0",
+  "tokens": 6760,
+  "gen": 2798,
+  "T": 1.0,
+  "task": "23581191"
+ },
+ {
+  "name": "fntrain__256b0a75_0_g1_s0",
+  "tokens": 43563,
+  "gen": 24448,
+  "T": 1.0,
+  "task": "256b0a75"
+ },
+ {
+  "name": "fntrain__272f95fa_0_g1_s0",
+  "tokens": 13869,
+  "gen": 6541,
+  "T": 1.0,
+  "task": "272f95fa"
+ },
+ {
+  "name": "fntrain__27a77e38_0_g1_s0",
+  "tokens": 14215,
+  "gen": 9153,
+  "T": 1.0,
+  "task": "27a77e38"
+ },
+ {
+  "name": "fntrain__28bf18c6_0_g1_s0",
+  "tokens": 7069,
+  "gen": 3769,
+  "T": 1.0,
+  "task": "28bf18c6"
+ },
+ {
+  "name": "fntrain__28e73c20_0_g1_s0",
+  "tokens": 44390,
+  "gen": 32115,
+  "T": 1.0,
+  "task": "28e73c20"
+ },
+ {
+  "name": "fntrain__342ae2ed_0_g1_s0",
+  "tokens": 20923,
+  "gen": 11399,
+  "T": 1.0,
+  "task": "342ae2ed"
+ },
+ {
+  "name": "fntrain__363442ee_0_g1_s0",
+  "tokens": 10791,
+  "gen": 4999,
+  "T": 1.0,
+  "task": "363442ee"
+ },
+ {
+  "name": "fntrain__3bd67248_0_g1_s0",
+  "tokens": 6213,
+  "gen": 2203,
+  "T": 1.0,
+  "task": "3bd67248"
+ },
+ {
+  "name": "fntrain__3c9b0459_0_g1_s0",
+  "tokens": 10303,
+  "gen": 7408,
+  "T": 1.0,
+  "task": "3c9b0459"
+ },
+ {
+  "name": "fntrain__4093f84a_0_g1_s0",
+  "tokens": 16670,
+  "gen": 9317,
+  "T": 1.0,
+  "task": "4093f84a"
+ },
+ {
+  "name": "fntrain__42f83767_0_g1_s0",
+  "tokens": 27508,
+  "gen": 13444,
+  "T": 1.0,
+  "task": "42f83767"
+ },
+ {
+  "name": "fntrain__44d8ac46_0_g1_s0",
+  "tokens": 15154,
+  "gen": 7626,
+  "T": 1.0,
+  "task": "44d8ac46"
+ },
+ {
+  "name": "fntrain__44f52bb0_0_g1_s0",
+  "tokens": 34171,
+  "gen": 29446,
+  "T": 1.0,
+  "task": "44f52bb0"
+ },
+ {
+  "name": "fntrain__48f8583b_0_g1_s0",
+  "tokens": 11650,
+  "gen": 6167,
+  "T": 1.0,
+  "task": "48f8583b"
+ },
+ {
+  "name": "fntrain__50f325b5_0_g1_s0",
+  "tokens": 38129,
+  "gen": 24352,
+  "T": 1.0,
+  "task": "50f325b5"
+ },
+ {
+  "name": "fntrain__5521c0d9_0_g1_s0",
+  "tokens": 12854,
+  "gen": 4074,
+  "T": 1.0,
+  "task": "5521c0d9"
+ },
+ {
+  "name": "fntrain__5b6cbef5_0_g1_s0",
+  "tokens": 14706,
+  "gen": 5282,
+  "T": 1.0,
+  "task": "5b6cbef5"
+ },
+ {
+  "name": "fntrain__5daaa586_0_g1_s0",
+  "tokens": 27049,
+  "gen": 17640,
+  "T": 1.0,
+  "task": "5daaa586"
+ },
+ {
+  "name": "fntrain__5e6bbc0b_0_g1_s0",
+  "tokens": 19949,
+  "gen": 16025,
+  "T": 1.0,
+  "task": "5e6bbc0b"
+ },
+ {
+  "name": "fntrain__5ffb2104_0_g1_s0",
+  "tokens": 16668,
+  "gen": 11389,
+  "T": 1.0,
+  "task": "5ffb2104"
+ },
+ {
+  "name": "fntrain__62ab2642_0_g1_s0",
+  "tokens": 27873,
+  "gen": 20904,
+  "T": 1.0,
+  "task": "62ab2642"
+ },
+ {
+  "name": "fntrain__67a423a3_0_g1_s0",
+  "tokens": 7574,
+  "gen": 3157,
+  "T": 1.0,
+  "task": "67a423a3"
+ },
+ {
+  "name": "fntrain__69889d6e_0_g1_s0",
+  "tokens": 27122,
+  "gen": 21025,
+  "T": 1.0,
+  "task": "69889d6e"
+ },
+ {
+  "name": "fntrain__6ca952ad_0_g1_s0",
+  "tokens": 16082,
+  "gen": 9071,
+  "T": 1.0,
+  "task": "6ca952ad"
+ },
+ {
+  "name": "fntrain__712bf12e_0_g1_s0",
+  "tokens": 34240,
+  "gen": 22947,
+  "T": 1.0,
+  "task": "712bf12e"
+ },
+ {
+  "name": "fntrain__7447852a_0_g1_s0",
+  "tokens": 19979,
+  "gen": 15356,
+  "T": 1.0,
+  "task": "7447852a"
+ },
+ {
+  "name": "fntrain__753ea09b_0_g1_s0",
+  "tokens": 93246,
+  "gen": 59009,
+  "T": 1.0,
+  "task": "753ea09b"
+ },
+ {
+  "name": "fntrain__77fdfe62_0_g1_s0",
+  "tokens": 7460,
+  "gen": 4607,
+  "T": 1.0,
+  "task": "77fdfe62"
+ },
+ {
+  "name": "fntrain__782b5218_0_g1_s0",
+  "tokens": 22256,
+  "gen": 16881,
+  "T": 1.0,
+  "task": "782b5218"
+ },
+ {
+  "name": "fntrain__7b6016b9_0_g1_s0",
+  "tokens": 22997,
+  "gen": 6994,
+  "T": 1.0,
+  "task": "7b6016b9"
+ },
+ {
+  "name": "fntrain__80214e03_0_g1_s0",
+  "tokens": 21347,
+  "gen": 13740,
+  "T": 1.0,
+  "task": "80214e03"
+ },
+ {
+  "name": "fntrain__81c0276b_0_g1_s0",
+  "tokens": 12156,
+  "gen": 5461,
+  "T": 1.0,
+  "task": "81c0276b"
+ },
+ {
+  "name": "fntrain__8597cfd7_0_g1_s0",
+  "tokens": 23279,
+  "gen": 14890,
+  "T": 1.0,
+  "task": "8597cfd7"
+ },
+ {
+  "name": "fntrain__880c1354_0_g1_s0",
+  "tokens": 32353,
+  "gen": 25686,
+  "T": 1.0,
+  "task": "880c1354"
+ },
+ {
+  "name": "fntrain__88207623_0_g1_s0",
+  "tokens": 19664,
+  "gen": 10663,
+  "T": 1.0,
+  "task": "88207623"
+ },
+ {
+  "name": "fntrain__8a371977_0_g1_s0",
+  "tokens": 18657,
+  "gen": 3379,
+  "T": 1.0,
+  "task": "8a371977"
+ },
+ {
+  "name": "fntrain__8abad3cf_0_g1_s0",
+  "tokens": 26795,
+  "gen": 22586,
+  "T": 1.0,
+  "task": "8abad3cf"
+ },
+ {
+  "name": "fntrain__8cb8642d_0_g1_s0",
+  "tokens": 48090,
+  "gen": 37072,
+  "T": 1.0,
+  "task": "8cb8642d"
+ },
+ {
+  "name": "fntrain__8ee62060_0_g1_s0",
+  "tokens": 12740,
+  "gen": 7134,
+  "T": 1.0,
+  "task": "8ee62060"
+ },
+ {
+  "name": "fntrain__8efcae92_0_g1_s0",
+  "tokens": 18386,
+  "gen": 8345,
+  "T": 1.0,
+  "task": "8efcae92"
+ },
+ {
+  "name": "fntrain__90347967_0_g1_s0",
+  "tokens": 7611,
+  "gen": 3747,
+  "T": 1.0,
+  "task": "90347967"
+ },
+ {
+  "name": "fntrain__99b1bc43_0_g1_s0",
+  "tokens": 9156,
+  "gen": 5636,
+  "T": 1.0,
+  "task": "99b1bc43"
+ },
+ {
+  "name": "fntrain__9b5080bb_0_g1_s0",
+  "tokens": 73830,
+  "gen": 49944,
+  "T": 1.0,
+  "task": "9b5080bb"
+ },
+ {
+  "name": "fntrain__a1aa0c1e_0_g1_s0",
+  "tokens": 39248,
+  "gen": 28370,
+  "T": 1.0,
+  "task": "a1aa0c1e"
+ },
+ {
+  "name": "fntrain__a644e277_0_g1_s0",
+  "tokens": 19740,
+  "gen": 9915,
+  "T": 1.0,
+  "task": "a644e277"
+ },
+ {
+  "name": "fntrain__a699fb00_0_g1_s0",
+  "tokens": 11753,
+  "gen": 5502,
+  "T": 1.0,
+  "task": "a699fb00"
+ },
+ {
+  "name": "fntrain__aa18de87_0_g1_s0",
+  "tokens": 15339,
+  "gen": 11672,
+  "T": 1.0,
+  "task": "aa18de87"
+ },
+ {
+  "name": "fntrain__aab50785_0_g1_s0",
+  "tokens": 13051,
+  "gen": 5699,
+  "T": 1.0,
+  "task": "aab50785"
+ },
+ {
+  "name": "fntrain__abbfd121_0_g1_s0",
+  "tokens": 19148,
+  "gen": 10411,
+  "T": 1.0,
+  "task": "abbfd121"
+ },
+ {
+  "name": "fntrain__b230c067_0_g1_s0",
+  "tokens": 21325,
+  "gen": 15415,
+  "T": 1.0,
+  "task": "b230c067"
+ },
+ {
+  "name": "fntrain__b60334d2_0_g1_s0",
+  "tokens": 6486,
+  "gen": 3392,
+  "T": 1.0,
+  "task": "b60334d2"
+ },
+ {
+  "name": "fntrain__b71a7747_0_g1_s0",
+  "tokens": 28395,
+  "gen": 16495,
+  "T": 1.0,
+  "task": "b71a7747"
+ },
+ {
+  "name": "fntrain__b745798f_0_g1_s0",
+  "tokens": 18383,
+  "gen": 10449,
+  "T": 1.0,
+  "task": "b745798f"
+ },
+ {
+  "name": "fntrain__b74ca5d1_0_g1_s0",
+  "tokens": 120366,
+  "gen": 86490,
+  "T": 1.0,
+  "task": "b74ca5d1"
+ },
+ {
+  "name": "fntrain__bdad9b1f_0_g1_s0",
+  "tokens": 6714,
+  "gen": 3068,
+  "T": 1.0,
+  "task": "bdad9b1f"
+ },
+ {
+  "name": "fntrain__bf89d739_0_g1_s0",
+  "tokens": 22725,
+  "gen": 13907,
+  "T": 1.0,
+  "task": "bf89d739"
+ },
+ {
+  "name": "fntrain__c1990cce_0_g1_s0",
+  "tokens": 29313,
+  "gen": 24490,
+  "T": 1.0,
+  "task": "c1990cce"
+ },
+ {
+  "name": "fntrain__c444b776_0_g1_s0",
+  "tokens": 15565,
+  "gen": 6107,
+  "T": 1.0,
+  "task": "c444b776"
+ },
+ {
+  "name": "fntrain__c4d1a9ae_0_g1_s0",
+  "tokens": 25512,
+  "gen": 21040,
+  "T": 1.0,
+  "task": "c4d1a9ae"
+ },
+ {
+  "name": "fntrain__c61be7dc_0_g1_s0",
+  "tokens": 20675,
+  "gen": 13615,
+  "T": 1.0,
+  "task": "c61be7dc"
+ },
+ {
+  "name": "fntrain__c6e1b8da_0_g1_s0",
+  "tokens": 60375,
+  "gen": 43270,
+  "T": 1.0,
+  "task": "c6e1b8da"
+ },
+ {
+  "name": "fntrain__c8f0f002_0_g1_s0",
+  "tokens": 6863,
+  "gen": 4111,
+  "T": 1.0,
+  "task": "c8f0f002"
+ },
+ {
+  "name": "fntrain__c9f8e694_0_g1_s0",
+  "tokens": 9277,
+  "gen": 3534,
+  "T": 1.0,
+  "task": "c9f8e694"
+ },
+ {
+  "name": "fntrain__caa06a1f_0_g1_s0",
+  "tokens": 50626,
+  "gen": 42652,
+  "T": 1.0,
+  "task": "caa06a1f"
+ },
+ {
+  "name": "fntrain__cc9053aa_0_g1_s0",
+  "tokens": 48341,
+  "gen": 39187,
+  "T": 1.0,
+  "task": "cc9053aa"
+ },
+ {
+  "name": "fntrain__ce4f8723_0_g1_s0",
+  "tokens": 9300,
+  "gen": 5975,
+  "T": 1.0,
+  "task": "ce4f8723"
+ },
+ {
+  "name": "fntrain__ce8d95cc_0_g1_s0",
+  "tokens": 12788,
+  "gen": 7337,
+  "T": 1.0,
+  "task": "ce8d95cc"
+ },
+ {
+  "name": "fntrain__ce9e57f2_0_g1_s0",
+  "tokens": 9262,
+  "gen": 5778,
+  "T": 1.0,
+  "task": "ce9e57f2"
+ },
+ {
+  "name": "fntrain__d511f180_0_g1_s0",
+  "tokens": 13678,
+  "gen": 10089,
+  "T": 1.0,
+  "task": "d511f180"
+ },
+ {
+  "name": "fntrain__d749d46f_0_g1_s0",
+  "tokens": 31819,
+  "gen": 22891,
+  "T": 1.0,
+  "task": "d749d46f"
+ },
+ {
+  "name": "fntrain__dc433765_0_g1_s0",
+  "tokens": 7857,
+  "gen": 3236,
+  "T": 1.0,
+  "task": "dc433765"
+ },
+ {
+  "name": "fntrain__dce56571_0_g1_s0",
+  "tokens": 9585,
+  "gen": 3842,
+  "T": 1.0,
+  "task": "dce56571"
+ },
+ {
+  "name": "fntrain__df8cc377_0_g1_s0",
+  "tokens": 20825,
+  "gen": 8858,
+  "T": 1.0,
+  "task": "df8cc377"
+ },
+ {
+  "name": "fntrain__df9fd884_0_g1_s0",
+  "tokens": 23291,
+  "gen": 16706,
+  "T": 1.0,
+  "task": "df9fd884"
+ },
+ {
+  "name": "fntrain__e048c9ed_0_g1_s0",
+  "tokens": 46575,
+  "gen": 39490,
+  "T": 1.0,
+  "task": "e048c9ed"
+ },
+ {
+  "name": "fntrain__e619ca6e_0_g1_s0",
+  "tokens": 36100,
+  "gen": 15853,
+  "T": 1.0,
+  "task": "e619ca6e"
+ },
+ {
+  "name": "fntrain__e69241bd_0_g1_s0",
+  "tokens": 14432,
+  "gen": 10535,
+  "T": 1.0,
+  "task": "e69241bd"
+ },
+ {
+  "name": "fntrain__e760a62e_0_g1_s0",
+  "tokens": 30944,
+  "gen": 13388,
+  "T": 1.0,
+  "task": "e760a62e"
+ },
+ {
+  "name": "fntrain__e7639916_0_g1_s0",
+  "tokens": 10041,
+  "gen": 4026,
+  "T": 1.0,
+  "task": "e7639916"
+ },
+ {
+  "name": "fntrain__e872b94a_0_g1_s0",
+  "tokens": 14485,
+  "gen": 9033,
+  "T": 1.0,
+  "task": "e872b94a"
+ },
+ {
+  "name": "fntrain__eb5a1d5d_0_g1_s0",
+  "tokens": 17414,
+  "gen": 7056,
+  "T": 1.0,
+  "task": "eb5a1d5d"
+ },
+ {
+  "name": "fntrain__ed36ccf7_0_g1_s0",
+  "tokens": 10263,
+  "gen": 7042,
+  "T": 1.0,
+  "task": "ed36ccf7"
+ },
+ {
+  "name": "fntrain__f5c89df1_0_g1_s0",
+  "tokens": 15372,
+  "gen": 7934,
+  "T": 1.0,
+  "task": "f5c89df1"
+ },
+ {
+  "name": "fntrain__fcc82909_0_g1_s0",
+  "tokens": 10300,
+  "gen": 5487,
+  "T": 1.0,
+  "task": "fcc82909"
+ },
+ {
+  "name": "fntrain__fd02da9e_0_g1_s0",
+  "tokens": 29125,
+  "gen": 23816,
+  "T": 1.0,
+  "task": "fd02da9e"
+ },
+ {
+  "name": "fntrain__fd096ab6_0_g1_s0",
+  "tokens": 39829,
+  "gen": 23689,
+  "T": 1.0,
+  "task": "fd096ab6"
+ },
+ {
+  "name": "fntrain__fe45cba4_0_g1_s0",
+  "tokens": 21219,
+  "gen": 15959,
+  "T": 1.0,
+  "task": "fe45cba4"
+ },
+ {
+  "name": "fntrain__00576224_0_g1_s0",
+  "tokens": 6709,
+  "gen": 3857,
+  "T": 1.0,
+  "task": "00576224"
+ },
+ {
+  "name": "fntrain__017c7c7b_0_g1_s0",
+  "tokens": 8798,
+  "gen": 5829,
+  "T": 1.0,
+  "task": "017c7c7b"
+ },
+ {
+  "name": "fntrain__08ed6ac7_0_g1_s0",
+  "tokens": 7791,
+  "gen": 3423,
+  "T": 1.0,
+  "task": "08ed6ac7"
+ },
+ {
+  "name": "fntrain__0a938d79_0_g1_s0",
+  "tokens": 14671,
+  "gen": 5726,
+  "T": 1.0,
+  "task": "0a938d79"
+ },
+ {
+  "name": "fntrain__0c786b71_0_g1_s0",
+  "tokens": 6265,
+  "gen": 3011,
+  "T": 1.0,
+  "task": "0c786b71"
+ },
+ {
+  "name": "fntrain__10fcaaa3_0_g1_s0",
+  "tokens": 19582,
+  "gen": 15018,
+  "T": 1.0,
+  "task": "10fcaaa3"
+ },
+ {
+  "name": "fntrain__11dc524f_0_g1_s0",
+  "tokens": 22419,
+  "gen": 15688,
+  "T": 1.0,
+  "task": "11dc524f"
+ },
+ {
+  "name": "fntrain__12997ef3_0_g1_s0",
+  "tokens": 14925,
+  "gen": 5873,
+  "T": 1.0,
+  "task": "12997ef3"
+ },
+ {
+  "name": "fntrain__15663ba9_0_g1_s0",
+  "tokens": 38876,
+  "gen": 26427,
+  "T": 1.0,
+  "task": "15663ba9"
+ },
+ {
+  "name": "fntrain__17b866bd_0_g1_s0",
+  "tokens": 22219,
+  "gen": 13463,
+  "T": 1.0,
+  "task": "17b866bd"
+ },
+ {
+  "name": "fntrain__1cf80156_0_g1_s0",
+  "tokens": 4771,
+  "gen": 1200,
+  "T": 1.0,
+  "task": "1cf80156"
+ },
+ {
+  "name": "fntrain__25d487eb_0_g1_s0",
+  "tokens": 9607,
+  "gen": 3382,
+  "T": 1.0,
+  "task": "25d487eb"
+ },
+ {
+  "name": "fntrain__29c11459_0_g1_s0",
+  "tokens": 5803,
+  "gen": 2518,
+  "T": 1.0,
+  "task": "29c11459"
+ },
+ {
+  "name": "fntrain__2ccd9fef_0_g1_s0",
+  "tokens": 79264,
+  "gen": 69856,
+  "T": 1.0,
+  "task": "2ccd9fef"
+ },
+ {
+  "name": "fntrain__2dc579da_0_g1_s0",
+  "tokens": 10586,
+  "gen": 5883,
+  "T": 1.0,
+  "task": "2dc579da"
+ },
+ {
+  "name": "fntrain__2de01db2_0_g1_s0",
+  "tokens": 22295,
+  "gen": 15906,
+  "T": 1.0,
+  "task": "2de01db2"
+ },
+ {
+  "name": "fntrain__3bd292e8_0_g1_s0",
+  "tokens": 49707,
+  "gen": 44729,
+  "T": 1.0,
+  "task": "3bd292e8"
+ },
+ {
+  "name": "fntrain__4522001f_0_g1_s0",
+  "tokens": 24603,
+  "gen": 20794,
+  "T": 1.0,
+  "task": "4522001f"
+ },
+ {
+  "name": "fntrain__494ef9d7_0_g1_s0",
+  "tokens": 19886,
+  "gen": 14670,
+  "T": 1.0,
+  "task": "494ef9d7"
+ },
+ {
+  "name": "fntrain__49d1d64f_0_g1_s0",
+  "tokens": 6907,
+  "gen": 3971,
+  "T": 1.0,
+  "task": "49d1d64f"
+ },
+ {
+  "name": "fntrain__4c177718_0_g1_s0",
+  "tokens": 26452,
+  "gen": 17213,
+  "T": 1.0,
+  "task": "4c177718"
+ },
+ {
+  "name": "fntrain__4e45f183_0_g1_s0",
+  "tokens": 32159,
+  "gen": 15428,
+  "T": 1.0,
+  "task": "4e45f183"
+ },
+ {
+  "name": "fntrain__4e7e0eb9_0_g1_s0",
+  "tokens": 40232,
+  "gen": 28395,
+  "T": 1.0,
+  "task": "4e7e0eb9"
+ },
+ {
+  "name": "fntrain__575b1a71_0_g1_s0",
+  "tokens": 12158,
+  "gen": 6808,
+  "T": 1.0,
+  "task": "575b1a71"
+ },
+ {
+  "name": "fntrain__58c02a16_0_g1_s0",
+  "tokens": 34684,
+  "gen": 27741,
+  "T": 1.0,
+  "task": "58c02a16"
+ },
+ {
+  "name": "fntrain__58e15b12_0_g1_s0",
+  "tokens": 28756,
+  "gen": 13419,
+  "T": 1.0,
+  "task": "58e15b12"
+ },
+ {
+  "name": "fntrain__5ad8a7c0_0_g1_s0",
+  "tokens": 31605,
+  "gen": 27027,
+  "T": 1.0,
+  "task": "5ad8a7c0"
+ },
+ {
+  "name": "fntrain__5bd6f4ac_0_g1_s0",
+  "tokens": 18191,
+  "gen": 10194,
+  "T": 1.0,
+  "task": "5bd6f4ac"
+ },
+ {
+  "name": "fntrain__623ea044_0_g1_s0",
+  "tokens": 11575,
+  "gen": 3769,
+  "T": 1.0,
+  "task": "623ea044"
+ },
+ {
+  "name": "fntrain__62c24649_0_g1_s0",
+  "tokens": 6207,
+  "gen": 2961,
+  "T": 1.0,
+  "task": "62c24649"
+ },
+ {
+  "name": "fntrain__66e6c45b_0_g1_s0",
+  "tokens": 7585,
+  "gen": 4458,
+  "T": 1.0,
+  "task": "66e6c45b"
+ },
+ {
+  "name": "fntrain__67636eac_0_g1_s0",
+  "tokens": 10762,
+  "gen": 4996,
+  "T": 1.0,
+  "task": "67636eac"
+ },
+ {
+  "name": "fntrain__681b3aeb_0_g1_s0",
+  "tokens": 12345,
+  "gen": 7584,
+  "T": 1.0,
+  "task": "681b3aeb"
+ },
+ {
+  "name": "fntrain__689c358e_0_g1_s0",
+  "tokens": 17209,
+  "gen": 12299,
+  "T": 1.0,
+  "task": "689c358e"
+ },
+ {
+  "name": "fntrain__6cf79266_0_g1_s0",
+  "tokens": 21126,
+  "gen": 8811,
+  "T": 1.0,
+  "task": "6cf79266"
+ },
+ {
+  "name": "fntrain__6d0aefbc_0_g1_s0",
+  "tokens": 5215,
+  "gen": 2469,
+  "T": 1.0,
+  "task": "6d0aefbc"
+ },
+ {
+  "name": "fntrain__6d1d5c90_0_g1_s0",
+  "tokens": 24915,
+  "gen": 20298,
+  "T": 1.0,
+  "task": "6d1d5c90"
+ },
+ {
+  "name": "fntrain__6e02f1e3_0_g1_s0",
+  "tokens": 16035,
+  "gen": 11884,
+  "T": 1.0,
+  "task": "6e02f1e3"
+ },
+ {
+  "name": "fntrain__6f8cd79b_0_g1_s0",
+  "tokens": 4899,
+  "gen": 1896,
+  "T": 1.0,
+  "task": "6f8cd79b"
+ },
+ {
+  "name": "fntrain__73c3b0d8_0_g1_s0",
+  "tokens": 21957,
+  "gen": 17232,
+  "T": 1.0,
+  "task": "73c3b0d8"
+ },
+ {
+  "name": "fntrain__759f3fd3_0_g1_s0",
+  "tokens": 19079,
+  "gen": 12987,
+  "T": 1.0,
+  "task": "759f3fd3"
+ },
+ {
+  "name": "fntrain__7d18a6fb_0_g1_s0",
+  "tokens": 17623,
+  "gen": 10550,
+  "T": 1.0,
+  "task": "7d18a6fb"
+ },
+ {
+  "name": "fntrain__7d419a02_0_g1_s0",
+  "tokens": 55431,
+  "gen": 42429,
+  "T": 1.0,
+  "task": "7d419a02"
+ },
+ {
+  "name": "fntrain__7f4411dc_0_g1_s0",
+  "tokens": 16816,
+  "gen": 9803,
+  "T": 1.0,
+  "task": "7f4411dc"
+ },
+ {
+  "name": "fntrain__82819916_0_g1_s0",
+  "tokens": 12836,
+  "gen": 7569,
+  "T": 1.0,
+  "task": "82819916"
+ },
+ {
+  "name": "fntrain__83302e8f_0_g1_s0",
+  "tokens": 43786,
+  "gen": 19607,
+  "T": 1.0,
+  "task": "83302e8f"
+ },
+ {
+  "name": "fntrain__83b6b474_0_g1_s0",
+  "tokens": 25541,
+  "gen": 21191,
+  "T": 1.0,
+  "task": "83b6b474"
+ },
+ {
+  "name": "fntrain__8403a5d5_0_g1_s0",
+  "tokens": 18752,
+  "gen": 13770,
+  "T": 1.0,
+  "task": "8403a5d5"
+ },
+ {
+  "name": "fntrain__84db8fc4_0_g1_s0",
+  "tokens": 13589,
+  "gen": 6681,
+  "T": 1.0,
+  "task": "84db8fc4"
+ },
+ {
+  "name": "fntrain__85c4e7cd_0_g1_s0",
+  "tokens": 8955,
+  "gen": 3129,
+  "T": 1.0,
+  "task": "85c4e7cd"
+ },
+ {
+  "name": "fntrain__8618d23e_0_g1_s0",
+  "tokens": 18632,
+  "gen": 15044,
+  "T": 1.0,
+  "task": "8618d23e"
+ },
+ {
+  "name": "fntrain__88a62173_0_g1_s0",
+  "tokens": 9452,
+  "gen": 6570,
+  "T": 1.0,
+  "task": "88a62173"
+ },
+ {
+  "name": "fntrain__9110e3c5_0_g1_s0",
+  "tokens": 100616,
+  "gen": 79364,
+  "T": 1.0,
+  "task": "9110e3c5"
+ },
+ {
+  "name": "fntrain__9344f635_0_g1_s0",
+  "tokens": 10990,
+  "gen": 5875,
+  "T": 1.0,
+  "task": "9344f635"
+ },
+ {
+  "name": "fntrain__94f9d214_0_g1_s0",
+  "tokens": 11162,
+  "gen": 7278,
+  "T": 1.0,
+  "task": "94f9d214"
+ },
+ {
+  "name": "fntrain__9565186b_0_g1_s0",
+  "tokens": 7563,
+  "gen": 4131,
+  "T": 1.0,
+  "task": "9565186b"
+ },
+ {
+  "name": "fntrain__9772c176_0_g1_s0",
+  "tokens": 25953,
+  "gen": 10502,
+  "T": 1.0,
+  "task": "9772c176"
+ },
+ {
+  "name": "fntrain__99fa7670_0_g1_s0",
+  "tokens": 6989,
+  "gen": 3646,
+  "T": 1.0,
+  "task": "99fa7670"
+ },
+ {
+  "name": "fntrain__9b30e358_0_g1_s0",
+  "tokens": 6874,
+  "gen": 4110,
+  "T": 1.0,
+  "task": "9b30e358"
+ },
+ {
+  "name": "fntrain__9edfc990_0_g1_s0",
+  "tokens": 82157,
+  "gen": 60707,
+  "T": 1.0,
+  "task": "9edfc990"
+ },
+ {
+  "name": "fntrain__9f27f097_0_g1_s0",
+  "tokens": 10598,
+  "gen": 4943,
+  "T": 1.0,
+  "task": "9f27f097"
+ },
+ {
+  "name": "fntrain__9f41bd9c_0_g1_s0",
+  "tokens": 24963,
+  "gen": 15533,
+  "T": 1.0,
+  "task": "9f41bd9c"
+ },
+ {
+  "name": "fntrain__9f669b64_0_g1_s0",
+  "tokens": 35176,
+  "gen": 28896,
+  "T": 1.0,
+  "task": "9f669b64"
+ },
+ {
+  "name": "fntrain__9f8de559_0_g1_s0",
+  "tokens": 13001,
+  "gen": 4474,
+  "T": 1.0,
+  "task": "9f8de559"
+ },
+ {
+  "name": "fntrain__a416fc5b_0_g1_s0",
+  "tokens": 73043,
+  "gen": 64564,
+  "T": 1.0,
+  "task": "a416fc5b"
+ },
+ {
+  "name": "fntrain__a6953f00_0_g1_s0",
+  "tokens": 134131,
+  "gen": 106604,
+  "T": 1.0,
+  "task": "a6953f00"
+ },
+ {
+  "name": "fntrain__a740d043_0_g1_s0",
+  "tokens": 5216,
+  "gen": 2287,
+  "T": 1.0,
+  "task": "a740d043"
+ },
+ {
+  "name": "fntrain__a85d4709_0_g1_s0",
+  "tokens": 12091,
+  "gen": 9091,
+  "T": 1.0,
+  "task": "a85d4709"
+ },
+ {
+  "name": "fntrain__aaef0977_0_g1_s0",
+  "tokens": 16211,
+  "gen": 12896,
+  "T": 1.0,
+  "task": "aaef0977"
+ },
+ {
+  "name": "fntrain__ac3e2b04_0_g1_s0",
+  "tokens": 21311,
+  "gen": 11511,
+  "T": 1.0,
+  "task": "ac3e2b04"
+ },
+ {
+  "name": "fntrain__ae4f1146_0_g1_s0",
+  "tokens": 17339,
+  "gen": 10593,
+  "T": 1.0,
+  "task": "ae4f1146"
+ },
+ {
+  "name": "fntrain__aedd82e4_0_g1_s0",
+  "tokens": 8086,
+  "gen": 5110,
+  "T": 1.0,
+  "task": "aedd82e4"
+ },
+ {
+  "name": "fntrain__af726779_0_g1_s0",
+  "tokens": 16415,
+  "gen": 9119,
+  "T": 1.0,
+  "task": "af726779"
+ },
+ {
+  "name": "fntrain__afe3afe9_0_g1_s0",
+  "tokens": 44676,
+  "gen": 26589,
+  "T": 1.0,
+  "task": "afe3afe9"
+ },
+ {
+  "name": "fntrain__b457fec5_0_g1_s0",
+  "tokens": 56594,
+  "gen": 43824,
+  "T": 1.0,
+  "task": "b457fec5"
+ },
+ {
+  "name": "fntrain__b548a754_0_g1_s0",
+  "tokens": 11264,
+  "gen": 5117,
+  "T": 1.0,
+  "task": "b548a754"
+ },
+ {
+  "name": "fntrain__b5bb5719_0_g1_s0",
+  "tokens": 20194,
+  "gen": 16522,
+  "T": 1.0,
+  "task": "b5bb5719"
+ },
+ {
+  "name": "fntrain__b782dc8a_0_g1_s0",
+  "tokens": 20774,
+  "gen": 12104,
+  "T": 1.0,
+  "task": "b782dc8a"
+ },
+ {
+  "name": "fntrain__b7cb93ac_0_g1_s0",
+  "tokens": 94265,
+  "gen": 85590,
+  "T": 1.0,
+  "task": "b7cb93ac"
+ },
+ {
+  "name": "fntrain__b7fb29bc_0_g1_s0",
+  "tokens": 21218,
+  "gen": 13608,
+  "T": 1.0,
+  "task": "b7fb29bc"
+ },
+ {
+  "name": "fntrain__b9b7f026_0_g1_s0",
+  "tokens": 9492,
+  "gen": 3591,
+  "T": 1.0,
+  "task": "b9b7f026"
+ },
+ {
+  "name": "fntrain__bc1d5164_0_g1_s0",
+  "tokens": 17840,
+  "gen": 14510,
+  "T": 1.0,
+  "task": "bc1d5164"
+ },
+ {
+  "name": "fntrain__bc93ec48_0_g1_s0",
+  "tokens": 33987,
+  "gen": 23867,
+  "T": 1.0,
+  "task": "bc93ec48"
+ },
+ {
+  "name": "fntrain__bcb3040b_0_g1_s0",
+  "tokens": 10192,
+  "gen": 2412,
+  "T": 1.0,
+  "task": "bcb3040b"
+ },
+ {
+  "name": "fntrain__bda2d7a6_0_g1_s0",
+  "tokens": 9773,
+  "gen": 5266,
+  "T": 1.0,
+  "task": "bda2d7a6"
+ },
+ {
+  "name": "fntrain__be94b721_0_g1_s0",
+  "tokens": 10897,
+  "gen": 6427,
+  "T": 1.0,
+  "task": "be94b721"
+ },
+ {
+  "name": "fntrain__c1d99e64_0_g1_s0",
+  "tokens": 13667,
+  "gen": 4710,
+  "T": 1.0,
+  "task": "c1d99e64"
+ },
+ {
+  "name": "fntrain__cbded52d_0_g1_s0",
+  "tokens": 27571,
+  "gen": 20708,
+  "T": 1.0,
+  "task": "cbded52d"
+ },
+ {
+  "name": "fntrain__ccd554ac_0_g1_s0",
+  "tokens": 8683,
+  "gen": 1904,
+  "T": 1.0,
+  "task": "ccd554ac"
+ },
+ {
+  "name": "fntrain__ce039d91_0_g1_s0",
+  "tokens": 26770,
+  "gen": 15669,
+  "T": 1.0,
+  "task": "ce039d91"
+ },
+ {
+  "name": "fntrain__cf5fd0ad_0_g1_s0",
+  "tokens": 26013,
+  "gen": 20261,
+  "T": 1.0,
+  "task": "cf5fd0ad"
+ },
+ {
+  "name": "fntrain__d43fd935_0_g1_s0",
+  "tokens": 13028,
+  "gen": 7122,
+  "T": 1.0,
+  "task": "d43fd935"
+ },
+ {
+  "name": "fntrain__d6ad076f_0_g1_s0",
+  "tokens": 15033,
+  "gen": 10103,
+  "T": 1.0,
+  "task": "d6ad076f"
+ },
+ {
+  "name": "fntrain__da2b0fe3_0_g1_s0",
+  "tokens": 8649,
+  "gen": 3301,
+  "T": 1.0,
+  "task": "da2b0fe3"
+ },
+ {
+  "name": "fntrain__dc46ea44_0_g1_s0",
+  "tokens": 40678,
+  "gen": 32311,
+  "T": 1.0,
+  "task": "dc46ea44"
+ },
+ {
+  "name": "fntrain__e734a0e8_0_g1_s0",
+  "tokens": 21233,
+  "gen": 12083,
+  "T": 1.0,
+  "task": "e734a0e8"
+ },
+ {
+  "name": "fntrain__e9b4f6fc_0_g1_s0",
+  "tokens": 16895,
+  "gen": 9482,
+  "T": 1.0,
+  "task": "e9b4f6fc"
+ },
+ {
+  "name": "fntrain__f45f5ca7_0_g1_s0",
+  "tokens": 15140,
+  "gen": 9551,
+  "T": 1.0,
+  "task": "f45f5ca7"
+ },
+ {
+  "name": "fntrain__f5aa3634_0_g1_s0",
+  "tokens": 20001,
+  "gen": 11644,
+  "T": 1.0,
+  "task": "f5aa3634"
+ },
+ {
+  "name": "fntrain__fe9372f3_0_g1_s0",
+  "tokens": 14930,
+  "gen": 8244,
+  "T": 1.0,
+  "task": "fe9372f3"
+ }
+]

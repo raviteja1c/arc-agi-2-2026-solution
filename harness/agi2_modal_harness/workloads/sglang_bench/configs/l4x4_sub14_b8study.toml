@@ -1,0 +1,1054 @@
+# BLOCK-8 STUDY AT 16 SLOTS (2026-10-26, megakernel campaign; docs/reports/1026_1440_megakernel_b8). Submission 14's
+# exact server (the notebook 1026-sub14-qwen38-flashnext-blocktier16-h1's launch_server.sh and switches cell 41aad7bc,
+# copied flag for flag: mf 0.90, graphs to 16, 20 GDN slots, the QSA block tier X 2.5, PLE direct read, int8 DOWNQ
+# sm_reduce, the session switches and exact-turn caps), served through the shared builder for fn_bringup-style probes,
+# with four arms: block 4 / block 8 x the fine-tuned draft h1 (sub 14's) / the original DFlash2 draft.
+# - Block 8 needs fork agi2/feat/qsa-wide-verify-on-blocktier f6f0d13f1e on top of sub 14 (818826b567):
+#   SGLANG_AGI2_QSA_RING_GROUPS=3 sizes the pending ring for a 8-token verify window (8 + 3 <= 12). Unset, every
+#   formula is as before, so the B4 arms run sub 14's code path unchanged.
+# - Only measurement settings differ from sub 14: decode_log_interval 10 (the per-window step record). SM_REDUCE_CPUS
+#   and the process affinity are set by the box script from the container's CPUs, as the notebook does.
+slug = "l4x4-sub14-b8study"
+model_alias = "qwen3.8-flash-next-nvfp4-radixark"
+served_name = "qwen3.8-flash-next"
+subset = "pilot30"
+budget_usd = 30.0
+same_host = true
+
+[greedy]
+prompts = 0
+max_new_tokens = 64
+
+[snapshot]
+enabled = false
+
+[sampling]
+reasoning_effort = "xhigh"
+temperature = 1.0
+top_p = 0.95
+top_k = 20
+
+[server]
+tp = 4
+mem_fraction_static = 0.90
+context_length = 262144
+max_running_requests = 18
+chunked_prefill_size = 1024
+disable_radix_cache = true
+mamba_ssm_dtype = "float32"
+kv_cache_dtype = "fp8_e4m3"
+decode_log_interval = 10
+extra_args = ["--ep-size", "4", "--quantization", "modelopt_fp4", "--fp4-gemm-backend", "marlin",
+              "--moe-runner-backend", "marlin", "--page-size", "64", "--ple-offload-embedding",
+              "--cuda-graph-max-bs-decode", "16", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10", "12", "14", "16",
+              "--max-mamba-cache-size", "20", "--min-free-slots-delay", "1",
+              "--enable-linear-replayssm-spec",
+              "--disable-prefill-cuda-graph", "--linear-attn-verify-backend", "triton", "--tool-call-parser",
+              "qwen3_coder", "--image-processor-backend", "pil", "--enable-streaming-session",
+              "--weight-loader-prefetch-checkpoints", "--model-loader-extra-config", "{\"num_threads\": 2}"]
+env = { PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True,pinned_max_round_threshold_mb:1024", SGLANG_ENABLE_GDN_REPLAYSSM_FOLD = "1", SGLANG_AGI2_QSA_PAIR_LAYER_SPLIT = "1", SGLANG_AGI2_FN_VISION_HOST_BLOCKS = "1", SGLANG_FLASHINFER_WORKSPACE_SIZE = "100663296", SGLANG_VLM_CACHE_SIZE_MB = "0", SGLANG_AGI2_FN_EXPERT_KEEP = "/vol/cache/dev/fn_keep/keep_384_code_bal4.json", SGLANG_AGI2_FN_EXPERT_KEEP_ANY_ORDER = "1", SGLANG_AGI2_HOST_EMBED = "1", SGLANG_AGI2_MARLIN_NO_SWIZZLED = "1", SGLANG_AGI2_MARLIN_INPLACE_REPACK = "1", SGLANG_AGI2_PLE_DIRECT_READ = "1", SGLANG_AGI2_PREFETCH_EXCLUDE = "plefp8", SGLANG_AGI2_QSA_TRITON_DECODE = "1", SGLANG_AGI2_QSA_IDX_GPC = "16", SGLANG_AGI2_QSA_IDX_STAGES = "1", SGLANG_AGI2_QSA_DIRECT_SPARSE = "1", SGLANG_AGI2_QSA_BLOCK_TIER_X = "2.5", SGLANG_AGI2_QSA_BLOCK_TIER_EVERY = "64", SGLANG_AGI2_QSA_BLOCK_TIER_MAX_GROUPS = "32768", SGLANG_AGI2_QSA_BLOCK_TIER_RESERVE = "0.04", SGLANG_AGI2_QSA_BLOCK_TIER_LOW_WATER = "0.06", SGLANG_AGI2_QSA_BLOCK_TIER_HYSTERESIS = "0.03", SGLANG_MM_ENCODE_MAX_TOKENS = "4096", SGLANG_TRITON_SLOW_COMPILE_THRESHOLD_SECS = "0", SGLANG_LOGPROB_CHUNK_SIZE = "128", SGLANG_DFLASH_DRAFT_WINDOW_KV = "1", SGLANG_AGI2_DRAFT_WINDOW_KV_PAGED = "1", SGLANG_ENABLE_DFLASH_SHARDED_VERIFY = "1", SGLANG_AGI2_VERIFY_TAIL = "1", SGLANG_AGI2_EARLY_PUBLISH = "1", SGLANG_AGI2_DFLASH_PINNED_NTNP = "1", SGLANG_AGI2_SWA_ONLY_WRAPPER0 = "1", SGLANG_ENABLE_SM_REDUCE_ALLREDUCE = "1", SGLANG_SM_REDUCE_FMT = "int8", SGLANG_SM_REDUCE_DOWNQ = "1", SGLANG_SM_REDUCE_THREADS = "4", SGLANG_SM_REDUCE_CHUNK_KB = "64", SGLANG_SM_REDUCE_PUBWARP = "1", SGLANG_ENABLE_STREAMING_SESSION_RETRACT = "1", SGLANG_ENABLE_STREAMING_SESSION_EVICT = "1", SGLANG_ENABLE_STREAMING_SESSION_PARK = "1", SGLANG_STREAMING_SESSION_PARK_HOST_GB = "16", SGLANG_AGI2_QSA_SESSION_PREFIX = "1", SGLANG_AGI2_QSA_RING2 = "1", SGLANG_ENABLE_DFLASH_LENGTH_CAP = "1", SGLANG_ENABLE_DFLASH_STOP_CAP = "1", SGLANG_ENABLE_STREAMING_SESSION_FOLDED_CLAIM = "1" }
+
+[compute]
+gpu = "L4:4"
+cpu = 8.0
+memory_mib = 122880
+timeout_hours = 3.0
+boot_timeout_min = 45
+
+[[arms]]
+name = "B4h1"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+
+[[arms]]
+name = "B8h1"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_QSA_RING_GROUPS = "3" }
+
+[[arms]]
+name = "B8orig"
+draft_alias = "dflash2-qwen3.8-flash-next"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_QSA_RING_GROUPS = "3" }
+
+[[arms]]
+name = "B4orig"
+draft_alias = "dflash2-qwen3.8-flash-next"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+
+# The QSA pair layer split off (1026_1541's follow-up): every rank computes its 6 query heads of every QSA layer
+# and stores its KV head's cache for all 12 (the KV pool halves in tokens: 16 x ~39k still fits), so no rank waits
+# at the all-reduce after attention while its pair partner computes 12 heads. Measures the ceiling of the rank-skew
+# lever (the second looks put the QSA arrival wait at 7.75-7.80 ms a step at block 4).
+[[arms]]
+name = "B4h1nopls"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_QSA_PAIR_LAYER_SPLIT = "0" }
+
+# Stage 1b A/B (agi2/feat/ar-l2-stage, SGLANG_AGI2_L2_STAGE; the increment is applied by b8_fixed16.sh check when
+# staged, and is off unless the arm sets it): each sm_reduce all-reduce stages the next hyper-connection mix's two
+# weight matrices into L2 on a side stream (bit 1: the MLP mix at attention's all-reduce; bit 2: the next layer's
+# attention mix at the MoE's). B4h1b repeats the baseline last, for drift.
+[[arms]]
+name = "B4h1st3"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_L2_STAGE = "3", SGLANG_AGI2_L2_STAGE_CTAS = "32" }
+
+[[arms]]
+name = "B4h1st3L"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_L2_STAGE = "3", SGLANG_AGI2_L2_STAGE_POLICY = "last" }
+
+# Prefill all-reduces through sm_reduce in 2 MiB pieces (SGLANG_AGI2_SMR_SPLIT, off by default): forwards over ~409
+# tokens leave NCCL. Read from P15's fill time (619k tokens of prefill), P16's extend costs above 409 tokens, P5 for
+# fidelity (int8 payload, as decode already ships). B4h1st3pf stacks it on stage 1b.
+[[arms]]
+name = "B4h1pf"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1" }
+
+[[arms]]
+name = "B4h1st3pf"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_L2_STAGE = "3", SGLANG_AGI2_SMR_SPLIT = "1" }
+
+# No device-to-host syncs in the QSA prefill path (SGLANG_AGI2_QSA_NOSYNC, off by default): the RoPE length check
+# skipped when the cache covers the context, host copies of sequence lengths / pool indices / max_q, and a pinned
+# non_blocking copy. Exact by construction (same values); read by P5 (equal to B4h1's), P15 fill and P16 extends.
+[[arms]]
+name = "B4h1ns"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_QSA_NOSYNC = "1" }
+
+[[arms]]
+name = "B4h1all"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_L2_STAGE = "3", SGLANG_AGI2_L2_STAGE_CTAS = "32", SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1" }
+
+# The rest of the extend's syncs (SGLANG_AGI2_EXTEND_NOSYNC, off by default; increment over the L2-stage one): new
+# requests' state slots reset with index_fill_ instead of `x[:, idx] = scalar` (a host scalar copy that waits for the
+# queued decode step, 40-55 ms per extend in 1026_1820), the QSA token -> request map sized from the host's
+# extend lengths, and the GDN chunk indices / offsets built from the host's copy of cu_seqlens. Exact. With it and
+# QSA_NOSYNC, an extend has no sync left, so the CPU queues it behind the running decode step.
+[[arms]]
+name = "B4h1nx"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "B4h1pfnx"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+# SLOT LADDER (structural program, docs/reports/1026_1946_structural_decode): sub 14's decode at 24 and 32 running.
+# Only the slot knobs change: max_running_requests N + 2, GDN state slots N + 4 (sub 14: 18 / 20 for 16), decode
+# graphs up to N. The prefill bundle's switches (split + both no-syncs: decode untouched, 1026_1820/1940) shorten the
+# fill. Prompts per arm: /opt/dev/data/prompts_<arm>.json (make_fixed16_prompts.py: S24 --n 24 --per-task 2; S32 --n 32
+# --per-task 2 --cuts-per-history 2; S24L --n 24 --lo 64000 --hi 100000 --per-task 2 --cuts-per-history 2).
+[[arms]]
+name = "S24"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "S32"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24", "28", "32"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "S24L"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+# PROMOTE-ON-TOUCH (structural program, KV residency; docs/reports/1026_1946_structural_decode): each arm is its
+# baseline plus SGLANG_AGI2_QSA_BLOCK_TIER_POT=1 (runs/forks/bt_pot_over_ext.incr.diff over the extend-no-sync tree):
+# host-resident groups the selection touches are copied to device right after the verify forward (side stream), the
+# rounds (every 32 steps) only demote under pressure and refill the reservoir, per rank. AUDIT checks the physical-group
+# books at every round (~1 ms per 32 steps). Exact by construction (bytes copied verbatim, slot order unchanged).
+# Prompts: S24P / S24LP read prompts_S24.json / prompts_S24L.json under their own names (stage copies them).
+[[arms]]
+name = "S16P"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1" }
+
+[[arms]]
+name = "S24P"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1" }
+
+[[arms]]
+name = "S24LP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_LAYER_STATS = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_DUMP = "1" }
+
+# POT v2 (POT_SWAP=1 by default since 10-27: claims beyond the reservoir swap with cold device groups; 48 mover
+# programs; GPU-side round candidates; the round's demotion copy is a Triton group copier, not SGLang's 24-CTA tiled
+# copy). S24LWP = S24LP + the protection window 8192 -> 2048 tokens (capacity: ~1/3 of device rows at 24 slots sit in
+# windows the tier never demotes). S32P = S32 + POT v2: S32 died at the first tier round's tiled-copy launch with
+# 0.25 GB free (1026_2014); POT never launches that kernel. Prompts: prompts_S24LWP / prompts_S32P = S24L's / S32's.
+# POT_LAYER_STATS (per-round layer-mask histograms for the per-layer residency decision) is on in every 66k POT arm
+# (S24LP, S24LWP, S24LGP), so they compare like with like; its atomic_or cost is sized by the smoke's phase 8 and bounds
+# the S24LP vs S24L comparison. The 40k arms (S24P, S32P, S32GP) run without it. The same three arms carry POT_DUMP
+# (rank 0 saves its 6 layers' selections every 8 rounds to <arm>/pot_dump: verify-row overlap, per-layer hot sets).
+[[arms]]
+name = "S24LWP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_WINDOW = "2048", SGLANG_AGI2_QSA_BLOCK_TIER_POT_LAYER_STATS = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_DUMP = "1" }
+
+[[arms]]
+name = "S32P"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24", "28", "32"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1" }
+
+# EXACT MEMORY LEVER 1 (agent M, agents/M_memory/REPORT.txt section 4.2 item 1): a sparse decode-graph list. Each
+# captured bs not taken frees ~50 MiB (40-60) of target + draft graph memory. A batch between two sizes pads up (model
+# math unchanged; padded rows run MoE on dummy rows). S24LGP = S24LP + 10 graphs {1,2,3,4,6,8,12,16,20,24} instead
+# of 16 (~0.30 GiB) + mf 0.90 -> 0.912 (+0.26 GiB of KV at 0.217 GiB per 0.01): the capacity test at 66k, same
+# serve-ready headroom. S32GP = S32P + 11 graphs {1,2,4,6,8,12,16,20,24,28,32} instead of 18 (~0.35 GiB) at mf 0.90:
+# the memory-safe 32-slot try. Names end in P for b8_fixed16.sh's POT gate; prompts: S24L's / S32's.
+[[arms]]
+name = "S24LGP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.912 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_LAYER_STATS = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_DUMP = "1" }
+
+[[arms]]
+name = "S32GP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1" }
+
+# GDN FOLD ON A SIDE STREAM (structural program, per-request costs; mem_cache/agi2_gdn_fold_side.py in the same
+# increment): the ReplaySSM fold after each verify (5.5 ms a step at 24 requests, on the critical path between the
+# verify and the next draft) runs on its own stream beside the draft-KV append, the scheduler's next-step work and the
+# next draft; target forwards and the mamba pool's clear / copy / load wait for it. Exact (same kernels, same bytes).
+# S24FP = S24P + SGLANG_AGI2_GDN_FOLD_SIDE=1, compared with S24P (both with P5: a race would show as a decode-vs-
+# prefill logprob gap far above the ~0.02 floor). Prompts: S24's.
+[[arms]]
+name = "S24FP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_GDN_FOLD_SIDE = "1" }
+
+# PER-LAYER RESIDENCY (docs/reports/1026_1946_structural_decode/BUILD_PERLAYER.md; SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER=1,
+# needs POT): one residency class per owned layer, so each layer's own hot set competes for that layer's device rows
+# (kvr11 S24LP: the 6 layers' round hot-set union is 1.43-1.57x the device groups, each layer alone 0.66-1.09x; with
+# S24LGP's KV every layer's set fits). Exact by construction (same bytes, per-layer maps; kernels unchanged).
+# S24LGRP = S24LGP + PERLAYER (the 66k question); S24LGbP = S24LGP under its own name (warm closing baseline).
+# S24RP = S24P + PERLAYER (the 40k control: capacity does not bind, so it prices the per-class overhead; with P5);
+# S24bP = S24P under its own name. Names: S*P for the POT gate, *RP for the per-layer gate (b8_fixed16.sh); prompts:
+# S24L* read S24L's, the others S24's.
+[[arms]]
+name = "S24LGRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.912 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_LAYER_STATS = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_DUMP = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1" }
+
+[[arms]]
+name = "S24LGbP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.912 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_LAYER_STATS = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_DUMP = "1" }
+
+[[arms]]
+name = "S24RP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1" }
+
+[[arms]]
+name = "S24bP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1" }
+
+# S24Lb = S24L under its own name: the warm closing baseline of a plan that opens with S24L (arms write to $OUT/<arm>)
+[[arms]]
+name = "S24Lb"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_SMR_SPLIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "B4h1b"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+
+[[arms]]
+name = "B8h1nopls"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_AGI2_QSA_RING_GROUPS = "3", SGLANG_AGI2_QSA_PAIR_LAYER_SPLIT = "0" }
+
+# SUB 17 VALIDATION (2026-10-28; docs/reports/1026_1946_structural_decode/SUB16_SERVER_CHANGES.md, option B). The
+# tree is fork agi2/feat/sub17 (sub 14 + the prefill bundle + POT v2; b8_fixed16.sh check applies it when
+# sub17_over_sub14.incr.diff is staged). Every arm runs sub 15's own server shape: 24 slots, decode graphs 1-24,
+# 28 GDN slots, 26 request rows, mf 0.89, the QSA block tier at X 3.0 (sub 15's cell 41aad7bc). S24Q / S24LQ = sub
+# 15's server exactly (no bundle switch, no POT); S24QP / S24LQP = sub 17's candidate switches (POT + its audit + the
+# bundle's exact half; no SMR_SPLIT); S24Qb / S24LQb = S24Q / S24LQ again, the warm closing baselines and the greedy
+# run-to-run floor. Names: S*P for the POT gate; prompts: S24L* read S24L's (66k), the others S24's (40k).
+[[arms]]
+name = "S24Q"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0" }
+
+[[arms]]
+name = "S24QP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "S24Qb"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0" }
+
+[[arms]]
+name = "S24LQ"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0" }
+
+[[arms]]
+name = "S24LQP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "S24LQb"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0" }
+
+# 24-SLOT FOLLOW-UP at sub 15's shape (run only if S24LQP leaves the 66k host share high): capacity. S24LQGP = S24LQP
+# + 10 decode graphs {1,2,3,4,6,8,12,16,20,24} with mf 0.89 -> 0.902 (the ~0.30 GiB the 6 dropped graphs free, as
+# S24LGP did from 0.90 -> 0.912: +12.7 % device rows at -0.05 GB headroom); S24LQGRP = S24LQGP + per-layer residency.
+[[arms]]
+name = "S24LQGP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "S24LQGRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1" }
+
+# CONCURRENCY at sub 15's tier shape (10-28 03:15; a 3rd-place team reports 900-980 tok/s on 4 x L4 with Flash-Next from
+# "high concurrency" at 100k+ tokens a problem): 32 slots, 11 decode graphs {1,2,4,6,8,12,16,20,24,28,32}, 36 GDN slots,
+# 34 rows, X 3.0, mf 0.90 (S32GP measured 0.56 GB free at X 2.5 / mf 0.90 with 11 graphs). S32QGP = POT + the exact
+# bundle; S32QGRP = + per-layer residency. Names S*P (POT gate), *RP (per-layer gate); prompts: S32's (39.0k).
+[[arms]]
+name = "S32QGP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34, mem_fraction_static = 0.90 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1" }
+
+[[arms]]
+name = "S32QGRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34, mem_fraction_static = 0.90 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1" }
+
+# NEAR-LOSSLESS at sub 15's shape (user 10-28 ~03:25: "absolute lossless clause could be disabled if you can manage to
+# get very very minute loss and yet significant boost"). Both on top of S24QP; judged by P5, P17 against the S24Q/S24Qb
+# floor, and a teacher-forced drift gate before any ship decision. S24QPS = + SMR_SPLIT (prefill all-reduces over
+# ~409 tokens through the int8 sm_reduce decode already uses; fill -20 %). S24QPB = + GDN recurrent state in bf16
+# instead of fp32 (SGLANG_MAMBA_SSM_DTYPE + the server flag: halves the ~28 MiB a slot a rank and the fold's 5.9 ms of
+# fp32 traffic; the fused fold kernels may refuse bf16, which this arm finds out).
+[[arms]]
+name = "S24QPS"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_SMR_SPLIT = "1" }
+
+[[arms]]
+name = "S24QPB"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89, mamba_ssm_dtype = "bfloat16" }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_MAMBA_SSM_DTYPE = "bfloat16" }
+
+# QSA TOP-K EXACTNESS (10-28; DeepInfer reader S, A1): upstream fast_topk keeps at most 4,096 entries of its coarse
+# threshold bucket and drops the rest, so true top-512 compressed groups can be lost. *CK arms: sub 15's server in eager
+# decode (--disable-cuda-graph) with SGLANG_AGI2_QSA_TOPK_CHECK=1, 512 new tokens (b8_fixed16.sh): the check logs rows
+# with picks below the true k-th score and threshold-bucket overflows on real serving scores. S24LQX: sub 15's server
+# with SGLANG_AGI2_QSA_TOPK_EXACT=1 (exact torch.topk, graphs on): the fix's cost against S24LQ.
+[[arms]]
+name = "S24QCK"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28", "--disable-cuda-graph"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_TOPK_CHECK = "1" }
+
+[[arms]]
+name = "S24LQCK"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28", "--disable-cuda-graph"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_TOPK_CHECK = "1" }
+
+[[arms]]
+name = "S24LQX"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_TOPK_EXACT = "1" }
+
+# THE KERNEL FIX (10-28): SGLANG_AGI2_FAST_TOPK_EXACT=1 routes every fast_topk call (decode and prefill) through
+# fast_topk_exact.cuh: the same radix select, but a threshold bucket over 4,096 entries is refined exactly from global
+# memory instead of clipped. S24LQK: its cost against S24LQ (graphs on). S24LQKCK: the check in eager decode over the
+# fixed kernel; it must log zero rows with wrong picks on the same real scores where S24LQCK counts them.
+[[arms]]
+name = "S24LQK"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S24LQKCK"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28", "--disable-cuda-graph"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_TOPK_CHECK = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# SPLIT-KV SPARSE DECODE (10-28; GPT-6.1 Sol, splitk_qsa_1028): SGLANG_AGI2_QSA_SPLITK=S splits each packed decode
+# program's 65 tiles of 2,051 selected slots into S balanced ranges plus an FP32 merge in fixed split order (same
+# attention, FP rounding differs). Sub 15's server + S=4 at 40k (S24QSK4) and 66k (S24LQSK4), against S24Q / S24LQ;
+# the S choice follows the check card's microbench (splitkv_q12.jsonl).
+[[arms]]
+name = "S24QSK4"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_SPLITK = "4" }
+
+[[arms]]
+name = "S24LQSK4"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.89 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "10",
+              "12", "14", "16", "18", "20", "22", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_SPLITK = "4" }
+
+# THE SUB-17 STACK (10-28 04:35; user: "huge and focused strides", +40 %): every lever at once, measured against sub 15
+# (S24Q / S24LQ) first and ablated afterwards. Z = POT v2 + audit, the exact bundle (QSA_NOSYNC, EXTEND_NOSYNC),
+# per-layer residency, 10 decode graphs with mf 0.902 (24 slots) and the exact top-k kernel. Split-KV was dropped
+# after kvr26 (10-28 04:37): at 96 rows the sparse kernel is DRAM-bound (340 us = 297 GB/s) or PCIe-bound (+450 us per
+# 10 % host share = ~22 GB/s), and S=2-16 ran 0.72-1.00x; it wins only at 16 rows (2.3-2.6x).
+# Names end in RP: the POT gate (S*P) and the per-layer gate (*RP) both apply. S32QZBRP adds the bf16 GDN state
+# (SGLANG_MAMBA_SSM_DTYPE, near-lossless: drift gate), which frees 13.5 MiB a slot a rank.
+[[arms]]
+name = "S24LQZRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S24QZRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# Block 8 on the sub-17 stack at 24 slots (10-28 12:30, for the draft-training line, which aims a B200-trained draft at
+# block 8): does 24 x 8 = 192-token verify fit at mf 0.902 with the 10 decode graphs, and what does a row cost here?
+# Needs agi2/feat/sub17-b8 (9fdad9ec63 = sub 17 + the pending ring of f6f0d13f1e): SGLANG_AGI2_QSA_RING_GROUPS=3
+# sizes the ring for an 8-token window (8 + 3 <= 12). Pair: S24QZRP (block 4) on the same box.
+[[arms]]
+name = "S24QZ8RP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3" }
+
+# Sub 17's chosen config (the user, 13:28: "okay lets see how bf16 mf 0.896 works out"): the stack + bf16 GDN state
+# at mf 0.896, block 4, the 10 graphs: a Modal preview of the Kaggle test's free memory and step.
+[[arms]]
+name = "S24QZBMRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# Sub 17's final graph list (the user, 10-28 16:30: "please add 5 and 7 work also"): S24QZBMRP + decode graphs 5 and 7
+# back (12 sizes: 1-8, 12, 16, 20, 24). Kaggle's 1028_1418 ran 0.90x sub 16 at 1-7 requests and 80-120k (n 12 vs 2):
+# with 10 sizes, 5 and 7 running requests pad to the 6- and 8-request graphs (+20 % / +14 % rows). Memory: sub 15/16's
+# 16 sizes took 0.65 + 0.50 GB on Kaggle vs 0.46 + 0.40 for 10, ~0.05 GB a size, so 12 sizes should leave ~0.80-0.85 GB
+# free at mf 0.896 (10 sizes: 0.90 on Modal, 0.93 on Kaggle). The bf16 session check runs on this arm.
+[[arms]]
+name = "S24QZB12RP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "5", "6", "7", "8", "12",
+              "16", "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# The fp32 twin of S24QZBMRP (mf 0.896, fp32 GDN state): the session-parity reference (GPT review G1 F5, 10-28).
+[[arms]]
+name = "S24QZMRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# Block 8 fallback (10-28 12:55): S24QZ8RP booted its 10 graphs at mf 0.902 (0.70 GB free a GPU after capture), then
+# OOMed in DFlash's sampling prewarm (dflash_worker_v2.prewarm_sampling -> flashinfer top_p_renorm_probs: 182 MiB per
+# 192-row x 248k-vocab fp32 buffer, twice block 4's). bf16 GDN state grows the KV pool 16.9 % at the same mf, so block 8
+# + bf16 at mf 0.885 frees ~0.37 GB more for the sampler peak and should still hold ~11 % more KV rows than fp32
+# block 4 at mf 0.902.
+[[arms]]
+name = "S24QZB8RP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.885 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3" }
+
+# The sub-17 stack + bf16 GDN state at 24 slots (10-28 12:00; between_verify.py: the 5.65 ms exact fold reads and writes
+# ~1.3 GB of fp32 state a period, and the verify's delta-rule kernels read it again). Near-lossless: P5 drift gate
+# against S24QZRP's own P5 on the same box. Set by the server flag, not the env: --enable-linear-replayssm-spec
+# resolves mamba_ssm_dtype to float32, and handle_environment_variables then overwrites SGLANG_MAMBA_SSM_DTYPE with it
+# (serving_hook.py:398-399). 1028_1211's first arm ran fp32 for that reason.
+[[arms]]
+name = "S24QZBRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S24LQZBRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S32QZRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34, mem_fraction_static = 0.90 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S32QZBRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34, mem_fraction_static = 0.90 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36", "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# 32 SLOTS AT LONG CONTEXT (10-28 05:10; prompts_S32L.json, 32 x 65.9k, make_s32l.py). Kernel measurements on one L4
+# (kvr26) put MoE, dense GEMMs and device sparse attention at their memory limits, so more tokens per weight read
+# (concurrency) is the remaining large lever; 66k is where capacity binds. S32LQZRP = S32QZRP's stack at 66k;
+# S32LQZBRP adds the bf16 GDN state (13.5 MiB a slot a rank freed, the fold's state traffic halved; drift gate).
+[[arms]]
+name = "S32LQZRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34, mem_fraction_static = 0.90 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S32LQZBRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 34, mem_fraction_static = 0.90 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "36", "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "32", "--cuda-graph-bs-decode", "1", "2", "4", "6", "8", "12", "16", "20",
+              "24", "28", "32"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# 10-29 upstream-picks gate (docs/reports/1029_0021_upstream_sweep_flashnext, section 3): S24QZBRP plus the two
+# exact switches of fork agi2/feat/upstream-picks-1029 (6970af3388). The moe_align rounding in that tree is
+# unconditional (buffer padding only), so it is in both arms.
+[[arms]]
+name = "S24QZBRUP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1" }
+
+# 10-29 fused hyper-connection mix + combine (fork agi2/feat/hc-fused d1632722ac over the picks tree; box tree ea758a4df3):
+# S24QZBRUP plus SGLANG_AGI2_HC_FUSED. Not bitwise (dot summation order), so judged by the drift gate.
+[[arms]]
+name = "S24QZBRUPH"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_HC_FUSED = "1" }
+
+# 10-29 EP top-k reduce over local slots, no zero-fill (fork agi2/feat/moe-ep-sum ea758a4df3, which also
+# carries hc-fused off): S24QZBRUP plus SGLANG_AGI2_MOE_EP_SUM. Exact: P17 greedy must match S24QZBRUP.
+[[arms]]
+name = "S24QZBRUPM"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1" }
+
+# 10-29 ragged verify gate (fork agi2/feat/ragged-verify + its QSA / GDN / sampler components;
+# docs/reports/1028_2345_ragged_verify_build/CONTRACT.md). Draft at block 8 with the QSA ring; the target verifies
+# a per-request prefix at 4 rows a request in total, so its graphs and sampler stay block-4-sized. S24RGU pins every
+# request at 4 rows: it must match S24QZBRP bit for bit at T 0 (P17). The TP check syncs once a step (tests only).
+[[arms]]
+name = "S24RGU"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3", SGLANG_AGI2_RAGGED_VERIFY = "1", SGLANG_AGI2_RAGGED_ROWS_PER_REQ = "4", SGLANG_AGI2_RAGGED_TP_CHECK = "1", SGLANG_AGI2_RAGGED_UNIFORM = "1" }
+
+# 10-29 ragged verify with the slot-1-confidence planner (c1_table.json, fit on public training-task probe data):
+# the speed arm. Bar: +4 % decode over S24QZBRP at 24 slots, P5 within the drift gate.
+[[arms]]
+name = "S24RG"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3", SGLANG_AGI2_RAGGED_VERIFY = "1", SGLANG_AGI2_RAGGED_ROWS_PER_REQ = "4", SGLANG_AGI2_RAGGED_TP_CHECK = "1", SGLANG_AGI2_RAGGED_TABLE = "/opt/dev/data/c1_table.json" }
+
+# 10-29 block-4 control for the ragged gate at the ragged arms' memory (mf 0.896): S24RGU must match it bit
+# for bit at T 0, and S24RG is timed against it.
+[[arms]]
+name = "S24QZBRP96"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+# 10-29 QSA decode indexer reading each request's compressed K once for its 4 verify rows (port of upstream
+# #46631, fork agi2/feat/qsa-idx-shared, in box tree 3004c65946): S24QZBRUP plus SGLANG_AGI2_QSA_IDX_SHARED.
+# Expected bitwise (agent Q1's analysis); P17 must match S24QZBRUP.
+[[arms]]
+name = "S24QZBRUPQ"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1" }
+
+# ... plus skipping the decode indexer's -inf logits fill (T1, parked 10-23 at 0.14 ms / 12 requests; at 24 slots
+# it writes 96 x 65,536 fp32 = 25 MB a call). fast_topk_exact reads only below each row's length.
+[[arms]]
+name = "S24QZBRUPQF"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_QSA_NO_LOGITS_FILL = "1" }
+
+# 10-29 everything on one server (fork agi2/feat/combo-1029: ragged verify + upstream picks + HC fused + EP sum +
+# QSA grouped reads, which switch themselves off under ragged rows): S24RG plus the lever switches. The candidate
+# for the next build, timed against S24QZBRP96 on 4 x L4.
+[[arms]]
+name = "S24CB"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3", SGLANG_AGI2_RAGGED_VERIFY = "1", SGLANG_AGI2_RAGGED_ROWS_PER_REQ = "4", SGLANG_AGI2_RAGGED_TP_CHECK = "1", SGLANG_AGI2_RAGGED_TABLE = "/opt/dev/data/c1_table.json", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_HC_FUSED = "1" }
+
+# 10-29 the real end-to-end bitwise gate (S24RGU vs S24QZBRP96 compares a block-8 draft with a block-4 one, whose
+# proposals and so step boundaries differ): dense block 8 at mf 0.896 with the QSA ring ...
+[[arms]]
+name = "S24QZB8RP96"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3" }
+
+# ... against ragged verify with every request pinned at 8 rows: same draft, same rows, packed path. P17 must be
+# identical to S24QZB8RP96's. (Block 8 OOMs on L4 at this mf; this pair runs on L40S.)
+[[arms]]
+name = "S24RGU8"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.896 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "8",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_RING_GROUPS = "3", SGLANG_AGI2_RAGGED_VERIFY = "1", SGLANG_AGI2_RAGGED_ROWS_PER_REQ = "8", SGLANG_AGI2_RAGGED_TP_CHECK = "1", SGLANG_AGI2_RAGGED_UNIFORM = "1" }
+
+# 10-29 the decisive L4 pair (lever tree 1e561b83d9 = picks + HC fused + EP sum + QSA grouped reads + EP-map gather,
+# no ragged code): every EXACT lever at once. P17 must equal S24QZBRP's; timed against it (A-B-A).
+[[arms]]
+name = "S24QZBRUX"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_EP_MAP_TRITON = "1" }
+
+# ... plus HC fused (not bitwise: dot summation order), judged by P5 against S24QZBRUX.
+[[arms]]
+name = "S24QZBRUXH"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_EP_MAP_TRITON = "1", SGLANG_AGI2_HC_FUSED = "1" }
+
+# 10-29 ... plus int8 hyper-connection mix weights (lever tree 6aed5be992): half the HC GEMM bytes. Lossy,
+# judged by P5 against S24QZBRUXH / S24QZBRP; timed against S24QZBRUXH.
+[[arms]]
+name = "S24QZBRUXW"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_EP_MAP_TRITON = "1", SGLANG_AGI2_HC_FUSED = "1", SGLANG_AGI2_HC_W8 = "1" }
+
+# 10-29 S24QZBRP + the draft's 32k candidate vocabulary (tree 996801283e): the draft head reads 8k rows a rank
+# instead of 62k (1.46 ms a step on L4). Exact in distribution; judged on acceptance.
+[[arms]]
+name = "S24QZBRPV"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_DRAFT_VOCAB = "/opt/dev/data/draft_vocab_32k.json" }
+
+# 10-29 S24QZBRUXH + the draft's 32k candidate vocabulary (tree 996801283e): the draft head reads 8k rows a rank
+# instead of 62k (1.46 ms a step on L4). Exact in distribution; judged on acceptance.
+[[arms]]
+name = "S24QZBRUXHV"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_EP_MAP_TRITON = "1", SGLANG_AGI2_HC_FUSED = "1", SGLANG_AGI2_DRAFT_VOCAB = "/opt/dev/data/draft_vocab_32k.json" }
+
+# 10-29 S24QZBRP + the skinny bf16 GEMM (tree d32f26aed1): decode-size dense linears on 32x64 Triton tiles
+# (cuBLAS leaves 33-52 CTAs of 58 at M = 96). Reorder class; timed against S24QZBRP.
+[[arms]]
+name = "S24QZBRPS"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_SKINNY_GEMM = "1" }
+
+# 10-29 S24QZBRUXHV + the skinny bf16 GEMM (tree d32f26aed1): decode-size dense linears on 32x64 Triton tiles
+# (cuBLAS leaves 33-52 CTAs of 58 at M = 96). Reorder class; timed against S24QZBRUXHV.
+[[arms]]
+name = "S24QZBRUXHVS"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_EP_MAP_TRITON = "1", SGLANG_AGI2_HC_FUSED = "1", SGLANG_AGI2_DRAFT_VOCAB = "/opt/dev/data/draft_vocab_32k.json", SGLANG_AGI2_SKINNY_GEMM = "1" }
+
+# 10-29 S24QZBRUX + the draft 32k candidate vocabulary (tree 17b4f71a70): the shippable bundle after the 10-29 L4 kernel benches
+# (EP sum -0.64, QSA grouped -0.51, draft head -1.41 ms on one L4; HC fused and the skinny GEMM out). Timed against S24QZBRP.
+[[arms]]
+name = "S24QZBRUXV"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 26, mem_fraction_static = 0.902 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "28",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "24", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_MROPE_ASYNC = "1", SGLANG_AGI2_MOE_EMPTY_CACHE13 = "1", SGLANG_AGI2_MOE_EP_SUM = "1", SGLANG_AGI2_QSA_IDX_SHARED = "1", SGLANG_AGI2_EP_MAP_TRITON = "1", SGLANG_AGI2_DRAFT_VOCAB = "/opt/dev/data/draft_vocab_32k.json" }
+
+
+# 10-29 ~22:40 concurrency curve (docs/reports/1029_2118_lossy_levers, section 7; user: "aim for making 48 or 64 reqs a
+# reality to enable 4 attempts"): sub 17's shipped server (S24QZBRP: POT v2 + per-layer residency + the exact bundle +
+# exact top-k + bf16 GDN state) at 48 and 64 conversations. Per added slot the server needs a GDN state slot (~14 MiB
+# bf16), request rows, larger decode graphs and a larger sampler pre-warm peak (0.38 GB at 96 verify rows, ~0.74 at 192,
+# ~1 GB at 256), so mem_fraction_static comes down to boot with headroom. Letters: W = the tier's never-demoted window
+# 8192 -> 2048 tokens (exact placement: frees ~18 MB a request a rank of device rows for the hot set), H = FP8 lm_head
+# (lossy: P6 +15 %, 0.15 GB a rank). Prompt sets: prompts_S48.json (48 x ~39k), prompts_S64T.json (64 x ~29k)
+# (runs/plans/1026_megakernel_b8/make_cc64.py). FIXED_NEW is raised by the launcher so every request is still running
+# when a 13-min fill completes.
+[[arms]]
+name = "S48QZBRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 50, mem_fraction_static = 0.86 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "52",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "48", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24", "32", "40", "48"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1" }
+
+[[arms]]
+name = "S48QZBWHRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 50, mem_fraction_static = 0.865 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "52",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "48", "--cuda-graph-bs-decode", "1", "2", "3", "4", "6", "8", "12", "16",
+              "20", "24", "32", "40", "48"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_WINDOW = "2048", SGLANG_ENABLE_FP8_LM_HEAD = "1", SGLANG_AGI2_FN_FP8_LM_HEAD = "1" }
+
+[[arms]]
+name = "S64TZBWHRP"
+draft_alias = "dflash2-qwen3.8-flash-next-agi2-h1"
+server = { max_running_requests = 66, mem_fraction_static = 0.83 }
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant", "--max-mamba-cache-size", "68",
+              "--mamba-ssm-dtype", "bfloat16",
+              "--cuda-graph-max-bs-decode", "64", "--cuda-graph-bs-decode", "1", "2", "4", "8", "12", "16", "24",
+              "32", "40", "48", "56", "64"]
+env = { SGLANG_AGI2_QSA_BLOCK_TIER_X = "3.0", SGLANG_AGI2_QSA_BLOCK_TIER_POT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_POT_AUDIT = "1", SGLANG_AGI2_QSA_NOSYNC = "1", SGLANG_AGI2_EXTEND_NOSYNC = "1", SGLANG_AGI2_QSA_BLOCK_TIER_PERLAYER = "1", SGLANG_AGI2_FAST_TOPK_EXACT = "1", SGLANG_AGI2_QSA_BLOCK_TIER_WINDOW = "2048", SGLANG_ENABLE_FP8_LM_HEAD = "1", SGLANG_AGI2_FN_FP8_LM_HEAD = "1" }

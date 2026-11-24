@@ -1,0 +1,2 @@
+{"build": "QG qg1 (GPTQ-NVFP4, 1 % damping)", "source": "/vol/cache/dev/fnxq/qg1", "model_dir": "/tmp/models/qwen3.8-flash-next-nvfp4-radixark", "expert_shards_replaced": 192,
+ "differ_from_radixark": 192, "other_files_unchanged": 35, "utc": "2026-10-29T16:45:10Z"}

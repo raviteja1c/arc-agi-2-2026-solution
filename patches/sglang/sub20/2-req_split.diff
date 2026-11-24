@@ -1,0 +1,500 @@
+diff --git a/python/sglang/srt/layers/attention/qsa/pair_layer_split.py b/python/sglang/srt/layers/attention/qsa/pair_layer_split.py
+index eb9cecd37b..0ce02c801f 100644
+--- a/python/sglang/srt/layers/attention/qsa/pair_layer_split.py
++++ b/python/sglang/srt/layers/attention/qsa/pair_layer_split.py
+@@ -92,3 +92,77 @@ def owned_layer_ids(layer_ids: Sequence[int], hf_text_config) -> List[int]:
+         if r is None or r.owner:
+             out.append(layer_id)
+     return out
++
++
++# ---------------------------------------------------------------------------------------------------------------------
++# agi2 request split (SGLANG_AGI2_QSA_REQ_SPLIT, on top of the pair split; off by default).
++#
++# Under the pair split the non-owner of a full-attention layer waits in the following all-reduce while the owner
++# reads the layer's context (indexer, sparse attention, tier host reads): 13.7 ms a step at 48 x 16k, 31.9 at 64 x 28k
++# (1030_1730 torch traces). The request split gives every request a home h in {0, 1} (the parity of its request-pool
++# slot, chosen at admission from the request's extra_key) and computes full-attention layer j for request r on group
++# member (j + h) % 2. Home-0 requests are exactly the pair split. A home-1 request's layer j is computed by the pair
++# split's non-owner of j, whose KV lives in the buffers of the paired layer j ^ 1 (owned there; home-0 requests use
++# those slots for layer j ^ 1, home-1 requests for layer j, and the two sets of slots are disjoint). So every rank
++# stores the same bytes as under the pair split, both members of a group compute every layer for their own requests,
++# and each row's partial is non-zero on exactly one member, so the all-reduce that follows sums the same values.
++# Non-home rows are written to the inert slots CUDA-graph padding already uses (KV slot 0, request 0's ring rows,
++# compressed slot 0), score no context, select nothing (-1) and are zeroed before the all-reduce.
++#
++# The radix cache must never share a prefix across homes (its KV lives on different members): the harness sends
++# extra_key "agi2h1..." for home-1 requests, and extra_key is part of the radix key.
++# ---------------------------------------------------------------------------------------------------------------------
++
++RS_HOME1_PREFIX = "agi2h1"
++
++
++def rs_enabled() -> bool:
++    return enabled() and get_bool_env_var("SGLANG_AGI2_QSA_REQ_SPLIT")
++
++
++def rs_home_of(extra_key) -> int:
++    """A request's home from its extra_key (the radix namespace the harness sets): 1 for "agi2h1...", else 0."""
++    return 1 if isinstance(extra_key, str) and extra_key.startswith(RS_HOME1_PREFIX) else 0
++
++
++def rs_alias_map(hf_text_config) -> dict:
++    """Non-owned full-attention layer id -> the owned layer id whose buffers hold its KV for home-1 requests."""
++    ids = full_attention_layer_ids(hf_text_config)
++    group = _group(int(hf_text_config.num_key_value_heads))
++    if group != 2:
++        raise ValueError(f"SGLANG_AGI2_QSA_REQ_SPLIT needs groups of 2 ranks a KV head, got {group}")
++    out = {}
++    for j, layer_id in enumerate(ids):
++        if not role(hf_text_config, layer_id).owner:
++            out[layer_id] = ids[j ^ 1]
++    return out
++
++
++def rs_attach(pool, hf_text_config) -> None:
++    """Point the pool (and its block tier) at the paired owned layer for every non-owned full-attention layer."""
++    alias = rs_alias_map(hf_text_config)
++    pool.agi2_rs_alias = alias
++    tier = getattr(pool, "agi2_block_tier", None)
++    if tier is not None:
++        tier.layer_alias = dict(alias)
++        # every rank now runs every full-attention layer: the tier's step advances at the first of them
++        tier.first_layer_id = int(full_attention_layer_ids(hf_text_config)[0])
++    import logging
++
++    logging.getLogger(__name__).info(
++        "agi2 request split: %d non-owned full-attention layers alias their paired owned layer's buffers: %s",
++        len(alias),
++        alias,
++    )
++
++
++def rs_fit(mask, n: int):
++    """A row mask cut or padded (False) to n rows."""
++    import torch
++
++    m = int(mask.shape[0])
++    if m == n:
++        return mask
++    if m > n:
++        return mask[:n]
++    return torch.cat([mask, mask.new_zeros(n - m)])
+diff --git a/python/sglang/srt/layers/attention/qsa/qsa_indexer.py b/python/sglang/srt/layers/attention/qsa/qsa_indexer.py
+index d957cf274a..693ceff3c2 100644
+--- a/python/sglang/srt/layers/attention/qsa/qsa_indexer.py
++++ b/python/sglang/srt/layers/attention/qsa/qsa_indexer.py
+@@ -465,8 +465,10 @@ class QSAIndexer(MultiPlatformOp):
+         state_slots: torch.Tensor | None = None,
+         state_stored: bool = False,
+         ring_prefix=None,
++        rs=None,
+     ) -> None:
+-        """Store the pending-group ring and compress each completed group."""
++        """Store the pending-group ring and compress each completed group. rs: the agi2 request split's
++        (want, sequence mask, row mask) for this layer, or None (the other home's groups compress into slot 0)."""
+ 
+         pool = metadata.token_to_kv_pool
+         is_extend = metadata.compress_member_rows is not None
+@@ -483,7 +485,7 @@ class QSAIndexer(MultiPlatformOp):
+             )
+ 
+         if metadata.is_cuda_graph:
+-            self._compress_decode_cuda_graph(metadata)
++            self._compress_decode_cuda_graph(metadata, rs=rs)
+             return
+ 
+         if metadata.write_locs is None:
+@@ -495,6 +497,10 @@ class QSAIndexer(MultiPlatformOp):
+             return
+         group_end_positions = metadata.compress_group_positions.long()
+         compressed_locs = metadata.write_locs
++        if rs is not None:
++            # agi2 request split: a group of the other home's sequence writes the inert compressed slot 0
++            group_mine = rs[1].index_select(0, metadata.compress_sequence_ids.long())
++            compressed_locs = torch.where(group_mine, compressed_locs, torch.zeros_like(compressed_locs))
+         if is_extend:
+             # Extend chunks are group-aligned; each planned group lies in this forward,
+             # so read its members from the packed chunk tensors.
+@@ -553,18 +559,26 @@ class QSAIndexer(MultiPlatformOp):
+         normalized = self.normalize_compressed_keys(pooled, compressed_rope_positions)
+         pool.set_qsa_compressed_k_buffer(self.layer_id, compressed_locs, normalized)
+ 
+-    def _compress_decode_cuda_graph(self, metadata) -> None:
+-        """Fixed-shape graph-replay compression; non-boundary rows write slot 0."""
++    def _compress_decode_cuda_graph(self, metadata, rs=None) -> None:
++        """Fixed-shape graph-replay compression; non-boundary rows write slot 0 (and, under the agi2 request split,
++        the other home's rows, which also read request 0's inert ring rows)."""
+ 
+         if metadata.graph_write_locs is None or metadata.graph_ring_group_locs is None:
+             raise RuntimeError("QSA CUDA graph compression metadata is incomplete")
+         pool = metadata.token_to_kv_pool
+         group_locs = metadata.graph_ring_group_locs
++        write_locs = metadata.graph_write_locs
++        if rs is not None:
++            from sglang.srt.layers.attention.qsa.pair_layer_split import rs_fit
++
++            mine = rs_fit(rs[2], write_locs.shape[0])
++            write_locs = torch.where(mine, write_locs, torch.zeros_like(write_locs))
++            group_locs = torch.where(mine[:, None], group_locs, torch.zeros_like(group_locs))
+         if self._use_fused_compress(pool):
+             self._fused_compress_store(
+                 pool,
+                 group_locs,
+-                metadata.graph_write_locs,
++                write_locs,
+             )
+             return
+         key_groups = pool.get_qsa_key_state_buffer(self.layer_id)[group_locs]
+@@ -576,7 +590,7 @@ class QSAIndexer(MultiPlatformOp):
+             compressed, compressed_rope_positions
+         )
+         pool.set_qsa_compressed_k_buffer(
+-            self.layer_id, metadata.graph_write_locs, compressed.contiguous()
++            self.layer_id, write_locs, compressed.contiguous()
+         )
+ 
+     def _rope_from_matrix(self, positions: torch.Tensor) -> torch.Tensor:
+@@ -795,6 +809,16 @@ class QSAIndexer(MultiPlatformOp):
+                 logical_positions,
+                 indexer_metadata.compress_member_rows is not None,
+             )
++        # agi2 request split (SGLANG_AGI2_QSA_REQ_SPLIT): this layer's buffers hold another layer's keys for the other
++        # home's requests, so their rows store into request 0's inert ring rows, compress into the inert slot 0 and
++        # score no context (pair_layer_split.py)
++        rs = getattr(forward_batch, "agi2_rs_mine", None)
++        if rs is not None:
++            from sglang.srt.layers.attention.qsa.pair_layer_split import rs_fit
++
++            state_slots = torch.where(
++                rs_fit(rs[2], state_slots.shape[0]), state_slots, torch.zeros_like(state_slots)
++            )
+         # Before project_qk: its fused path stores this forward's ring tail.
+         ring_prefix = self._agi2_gather_ring_prefix(indexer_metadata)
+         q, token_k, state_stored = self.project_qk(
+@@ -817,11 +841,19 @@ class QSAIndexer(MultiPlatformOp):
+             state_slots=state_slots,
+             state_stored=state_stored,
+             ring_prefix=ring_prefix,
++            rs=rs,
+         )
+         if forward_mode.is_decode() or is_target_verify or is_draft_extend:
+             compressed_cache, page_table, compressed_lengths, max_model_len = (
+                 indexer_metadata.get_decode_mqa_inputs(self.layer_id)
+             )
++            if rs is not None:
++                # agi2 request split: the other home's rows score no context (their CTAs exit at once)
++                compressed_lengths = torch.where(
++                    rs_fit(rs[2], compressed_lengths.shape[0]),
++                    compressed_lengths,
++                    torch.zeros_like(compressed_lengths),
++                )
+             return self.select_decode_tokens(
+                 q,
+                 compressed_cache,
+diff --git a/python/sglang/srt/layers/attention/qwen_sparse_attn_backend.py b/python/sglang/srt/layers/attention/qwen_sparse_attn_backend.py
+index 07bf555c40..0d165e5bc3 100644
+--- a/python/sglang/srt/layers/attention/qwen_sparse_attn_backend.py
++++ b/python/sglang/srt/layers/attention/qwen_sparse_attn_backend.py
+@@ -1327,6 +1327,18 @@ class QwenSparseAttnBackend(AttentionBackend):
+         slots = metadata.token_slot_table[sequence_ids[:, None], safe]
+         return torch.where(valid, slots, torch.full_like(slots, -1)).to(torch.int32)
+ 
++    @staticmethod
++    def _agi2_rs_loc(forward_batch):
++        """agi2 request split (SGLANG_AGI2_QSA_REQ_SPLIT): the KV write slots of this layer, with the other home's
++        rows sent to the inert slot 0 (this layer's buffers hold another layer's K/V for those requests)."""
++        loc = forward_batch.out_cache_loc
++        rs = getattr(forward_batch, "agi2_rs_mine", None)
++        if rs is None or not isinstance(loc, torch.Tensor):
++            return loc
++        from sglang.srt.layers.attention.qsa.pair_layer_split import rs_fit
++
++        return torch.where(rs_fit(rs[2], loc.shape[0]), loc, torch.zeros_like(loc))
++
+     def forward_extend(
+         self,
+         q: torch.Tensor,
+@@ -1342,7 +1354,7 @@ class QwenSparseAttnBackend(AttentionBackend):
+             raise ValueError("QSA sparse attention requires topk_indices")
+         if save_kv_cache:
+             self.token_to_kv_pool.set_kv_buffer(
+-                layer, forward_batch.out_cache_loc, k, v
++                layer, self._agi2_rs_loc(forward_batch), k, v
+             )
+         q = q.reshape(-1, layer.tp_q_head_num, layer.head_dim)
+         num_output_rows = q.shape[0]
+@@ -1591,7 +1603,7 @@ class QwenSparseAttnBackend(AttentionBackend):
+             raise ValueError("QSA sparse attention requires topk_indices")
+         if save_kv_cache:
+             self.token_to_kv_pool.set_kv_buffer(
+-                layer, forward_batch.out_cache_loc, k, v
++                layer, self._agi2_rs_loc(forward_batch), k, v
+             )
+         q = q.reshape(-1, layer.tp_q_head_num, layer.head_dim)
+         return self._forward_paged_attention(q, layer, forward_batch, topk_indices)
+diff --git a/python/sglang/srt/managers/scheduler.py b/python/sglang/srt/managers/scheduler.py
+index 0ae2c7f8bd..73ba43af9d 100644
+--- a/python/sglang/srt/managers/scheduler.py
++++ b/python/sglang/srt/managers/scheduler.py
+@@ -4034,10 +4034,24 @@ class Scheduler(
+         if mamba_allocator is not None:
+             mamba_allocator.alloc_group_begin(len(self.waiting_queue))
+         buffer_pipeline = self.tree_cache.buffer_pipeline
++        # agi2 request split (SGLANG_AGI2_QSA_REQ_SPLIT): a new request needs a free row of its home's parity
++        from sglang.srt.layers.attention.qsa import pair_layer_split as _agi2_pls
++
++        _agi2_rs = _agi2_pls.rs_enabled()
+         # Get requests from the waiting queue to a new prefill batch
+         for req in self.waiting_queue:
+             if self.enable_lora and not self.can_schedule_lora_req(req, running_loras):
+                 continue
++            if _agi2_rs and not req.kv.holds_kv:
++                # its home is full: it waits, and the other home's requests can still be admitted (GPT review F1)
++                h = _agi2_pls.rs_home_of(getattr(req, "extra_key", None))
++                same = sum(
++                    1
++                    for r in adder.can_run_list
++                    if not r.kv.holds_kv and _agi2_pls.rs_home_of(getattr(r, "extra_key", None)) == h
++                )
++                if same + 1 > self.req_to_token_pool.agi2_free_of_parity(h):
++                    continue
+ 
+             # A forward batch runs one pooling mode, so setwise readout requests
+             # (token_indices_to_pool) cannot share a batch with last-token ones.
+diff --git a/python/sglang/srt/mem_cache/agi2_qsa_block_tier.py b/python/sglang/srt/mem_cache/agi2_qsa_block_tier.py
+index 4d08519ea6..67b947637d 100644
+--- a/python/sglang/srt/mem_cache/agi2_qsa_block_tier.py
++++ b/python/sglang/srt/mem_cache/agi2_qsa_block_tier.py
+@@ -901,6 +901,8 @@ class BlockTierState:
+         """Residency class of a global layer id (0 with one class)."""
+         if self.C == 1:
+             return 0
++        # agi2 (SGLANG_AGI2_QSA_REQ_SPLIT): a non-owned layer shares its paired owned layer's class (rs_attach)
++        layer_id = getattr(self, "layer_alias", {}).get(int(layer_id), int(layer_id))
+         c = self.layer_cls.get(int(layer_id))
+         if c is None:
+             raise KeyError(f"agi2 QSA block tier PERLAYER: layer {layer_id} is not an owned layer {sorted(self.layer_cls)}")
+diff --git a/python/sglang/srt/mem_cache/kv_cache_configurator.py b/python/sglang/srt/mem_cache/kv_cache_configurator.py
+index b50f6fdb31..4575539d87 100644
+--- a/python/sglang/srt/mem_cache/kv_cache_configurator.py
++++ b/python/sglang/srt/mem_cache/kv_cache_configurator.py
+@@ -1978,6 +1978,12 @@ class KVCacheConfigurator:
+             post_capture_active=self.post_capture_kv_active and quant_method is None,
+             **extra_args,
+         )
++        if qsa_profile is not None and not self.is_draft_worker:
++            # agi2 (SGLANG_AGI2_QSA_REQ_SPLIT): non-owned full-attention layers use their paired owned layer's buffers
++            from sglang.srt.layers.attention.qsa import pair_layer_split
++
++            if pair_layer_split.rs_enabled():
++                pair_layer_split.rs_attach(token_to_kv_pool, self.model_config.hf_text_config)
+         return token_to_kv_pool
+ 
+     def _build_mha_kv_pool(
+diff --git a/python/sglang/srt/mem_cache/memory_pool.py b/python/sglang/srt/mem_cache/memory_pool.py
+index 49863ba93d..f8a060bf3c 100644
+--- a/python/sglang/srt/mem_cache/memory_pool.py
++++ b/python/sglang/srt/mem_cache/memory_pool.py
+@@ -318,6 +318,11 @@ class ReqToTokenPool:
+     def available_size(self):
+         return len(self.free_slots)
+ 
++    def agi2_free_of_parity(self, parity: int) -> int:
++        """agi2 request split: free rows of one home's parity (the scheduler's admission checks a new request's home
++        against this, GPT review F1; a min over the two parities had held a request back with the other home free)."""
++        return sum(1 for s in self.free_slots if (s & 1) == parity)
++
+     def alloc(self, reqs: list[Req]) -> Optional[List[int]]:
+         # Indices of reqs that already have a req_pool_idx and will reuse
+         # their existing slot (e.g. chunked prefill continuing across chunks).
+@@ -326,7 +331,15 @@ class ReqToTokenPool:
+             "a reused row must carry allocated KV"
+         )
+ 
+-        select_index = self.alloc_rows(len(reqs) - len(reusing))
++        from sglang.srt.layers.attention.qsa import pair_layer_split as _agi2_pls
++
++        if _agi2_pls.rs_enabled():
++            # agi2 request split (SGLANG_AGI2_QSA_REQ_SPLIT): a request's home is the parity of its slot, chosen here
++            # from its extra_key (the harness's radix namespace)
++            homes = [_agi2_pls.rs_home_of(getattr(r, "extra_key", None)) for r in reqs if not r.kv.holds_kv]
++            select_index = self._agi2_alloc_rows_by_parity(homes)
++        else:
++            select_index = self.alloc_rows(len(reqs) - len(reusing))
+         if select_index is None:
+             return None
+         offset = 0
+@@ -353,6 +366,24 @@ class ReqToTokenPool:
+             self._on_alloc_rows(select_index)
+         return select_index
+ 
++    def _agi2_alloc_rows_by_parity(self, parities: List[int]) -> Optional[List[int]]:
++        """alloc_rows with each row's index of the given parity (agi2 request split), or None if any parity is short."""
++        if not parities:
++            return []
++        picked = []
++        taken = set()
++        for want in parities:
++            idx = next((s for s in reversed(self.free_slots) if s % 2 == want and s not in taken), None)
++            if idx is None:
++                return None
++            picked.append(idx)
++            taken.add(idx)
++        self.free_slots = [s for s in self.free_slots if s not in taken]
++        self.req_generation[picked] += 1
++        if self._on_alloc_rows is not None:
++            self._on_alloc_rows(picked)
++        return picked
++
+     def free_rows(self, indices: List[int]) -> None:
+         # Per-row, so beam member rows release their aux entries too: they reach
+         # alloc_aux_to_lengths via the decode batch's req_pool_indices_cpu.
+diff --git a/python/sglang/srt/mem_cache/qsa_kv_pool.py b/python/sglang/srt/mem_cache/qsa_kv_pool.py
+index 70b3ce2d3b..a469db900b 100644
+--- a/python/sglang/srt/mem_cache/qsa_kv_pool.py
++++ b/python/sglang/srt/mem_cache/qsa_kv_pool.py
+@@ -271,6 +271,14 @@ class QSATokenToKVPool(HybridLinearKVPool):
+         k_size, v_size = self.get_kv_size_bytes()
+         self.mem_usage = (k_size + v_size) / GB
+ 
++    def _transfer_full_attention_id(self, layer_id: int):
++        # agi2 (SGLANG_AGI2_QSA_REQ_SPLIT): a non-owned full-attention layer reads and writes its paired owned layer's
++        # buffers (pair_layer_split.rs_attach); its own rows are disjoint from that layer's (other home)
++        alias = getattr(self, "agi2_rs_alias", None)
++        if alias:
++            layer_id = alias.get(layer_id, layer_id)
++        return super()._transfer_full_attention_id(layer_id)
++
+     def agi2_phys(self, loc: torch.Tensor, layer_id: Optional[int] = None) -> torch.Tensor:
+         """agi2 block tier: index slots -> physical K/V rows (identity when the tier is off). With per-layer
+         residency the rows depend on the (global) layer id."""
+diff --git a/python/sglang/srt/models/qwen4_exp.py b/python/sglang/srt/models/qwen4_exp.py
+index 08e452707e..68cd39ea32 100644
+--- a/python/sglang/srt/models/qwen4_exp.py
++++ b/python/sglang/srt/models/qwen4_exp.py
+@@ -1635,7 +1635,13 @@ class Qwen4ExpAttentionDecoderLayer(
+         self.is_qsa = is_qwen_qsa(config)
+         # agi2 (SGLANG_AGI2_QSA_PAIR_LAYER_SPLIT, off by default): this rank's role in the pair layer split.
+         self._pls = self._agi2_pair_layer_split(config, layer_id, quant_config, prefix) if self.is_qsa else None
+-        if self.is_qsa and (self._pls is None or self._pls.owner):
++        # agi2 (SGLANG_AGI2_QSA_REQ_SPLIT): every member of a KV-head group computes every full-attention layer, each
++        # for the requests whose home puts the layer on it (pair_layer_split.py, request split)
++        from sglang.srt.layers.attention.qsa import pair_layer_split as _agi2_pls
++
++        self._rs = self._pls is not None and _agi2_pls.rs_enabled()
++        self._rs_first = self._rs and _agi2_pls.full_attention_layer_ids(config)[0] == layer_id
++        if self.is_qsa and (self._pls is None or self._pls.owner or self._rs):
+             self.indexer = build_qsa_indexer(
+                 config=config,
+                 layer_id=layer_id,
+@@ -1659,7 +1665,7 @@ class Qwen4ExpAttentionDecoderLayer(
+         pls = pair_layer_split.role(config, layer_id)
+         if pls is None:
+             return None
+-        if not pls.owner:
++        if not pls.owner and not pair_layer_split.rs_enabled():
+             self.qkv_proj = self.o_proj = self.attn = None
+             logger.info("agi2 pair layer split: layer %d computed by its pair partner", layer_id)
+             return pls
+@@ -1737,6 +1743,13 @@ class Qwen4ExpAttentionDecoderLayer(
+             forward_batch,
+             indexer_metadata,
+         )
++        rs = getattr(forward_batch, "agi2_rs_mine", None)
++        if rs is not None:
++            # agi2 request split: rows of the other home select nothing here (no sparse reads, no tier work)
++            from sglang.srt.layers.attention.qsa.pair_layer_split import rs_fit
++
++            mine = rs_fit(rs[2], topk_indices.shape[0])
++            topk_indices = torch.where(mine[:, None], topk_indices, torch.full_like(topk_indices, -1))
+         should_capture = getattr(
+             sparse_backend, "should_capture_mtp_sparse_indices", None
+         )
+@@ -1795,6 +1808,18 @@ class Qwen4ExpAttentionDecoderLayer(
+             else:
+                 gate = gate.reshape(gate.shape[0], -1) if gate.ndim == 3 else gate
+                 attn_output = attn_output * torch.sigmoid(gate)
++        rs = getattr(forward_batch, "agi2_rs_mine", None)
++        if rs is not None:
++            # agi2 request split: the other home's rows selected nothing (their attention may be 0/0 = NaN); select
++            # zeros before o_proj so no NaN reaches a GEMM whose activation quantization could mix rows
++            from sglang.srt.layers.attention.qsa.pair_layer_split import rs_fit
++
++            mine = rs_fit(rs[2], attn_output.shape[0])
++            attn_output = torch.where(
++                mine.view(-1, *([1] * (attn_output.dim() - 1))),
++                attn_output,
++                torch.zeros((), dtype=attn_output.dtype, device=attn_output.device),
++            )
+         output, _ = self.o_proj(attn_output)
+         return output
+ 
+@@ -1814,7 +1839,9 @@ class Qwen4ExpAttentionDecoderLayer(
+         )
+ 
+         if not forward_batch.forward_mode.is_idle():
+-            if self._pls is not None and not self._pls.owner:
++            if self._rs:
++                hidden_states = self._agi2_rs_attention(positions, hidden_states, forward_batch)
++            elif self._pls is not None and not self._pls.owner:
+                 # agi2 pair layer split: the partner owns this layer; the all-reduce in _prepare_qwen4_exp_mlp adds
+                 # its partial to this zero one.
+                 hidden_states = torch.zeros(
+@@ -1835,6 +1862,34 @@ class Qwen4ExpAttentionDecoderLayer(
+         hidden_states = self._run_qwen4_exp_mlp(hidden_states, forward_batch)
+         return self._postprocess_qwen4_exp_layer(hidden_states, residual, forward_batch)
+ 
++    def _agi2_rs_attention(self, positions, hidden_states, forward_batch):
++        """agi2 request split (SGLANG_AGI2_QSA_REQ_SPLIT): compute this full-attention layer for the rows whose home
++        puts it on this rank (home = request-pool slot parity; the layer's owner takes home 0, its partner home 1).
++        The other rows write only inert slots, score and select nothing, and leave a zero partial, so the all-reduce
++        in _prepare_qwen4_exp_mlp sums one non-zero partial a row, as under the pair split."""
++        from sglang.srt.layers.attention.qsa.glue import get_qsa_indexer_metadata
++        from sglang.srt.layers.attention.qsa.pair_layer_split import rs_fit
++
++        masks = getattr(forward_batch, "agi2_rs_masks", None)
++        if self._rs_first or masks is None:
++            # once a forward, at its first full-attention layer (inside the graph capture for a graph): homes of the
++            # batch's requests and of its rows
++            im = get_qsa_indexer_metadata(get_attn_backend(), self.layer_id, forward_batch)
++            rp = im.req_pool_indices if im.req_pool_indices is not None else forward_batch.req_pool_indices
++            home = rp.to(torch.int64) & 1
++            rows = home.index_select(0, im.get_token_to_batch_idx().to(torch.int64))
++            masks = {h: (home == h, rows == h) for h in (0, 1)}
++            forward_batch.agi2_rs_masks = masks
++        want = 0 if self._pls.owner else 1
++        seq_mine, row_mine = masks[want]
++        forward_batch.agi2_rs_mine = (want, seq_mine, row_mine)
++        try:
++            out = self.self_attention(positions=positions, hidden_states=hidden_states, forward_batch=forward_batch)
++        finally:
++            forward_batch.agi2_rs_mine = None
++        mine = rs_fit(row_mine, out.shape[0])
++        return torch.where(mine[:, None], out, torch.zeros((), dtype=out.dtype, device=out.device))
++
+ 
+ ALL_DECODER_LAYER_TYPES = {
+     "attention": Qwen4ExpAttentionDecoderLayer,
+diff --git a/python/sglang/srt/session/streaming_session.py b/python/sglang/srt/session/streaming_session.py
+index 35cc0a1ebf..e9f1fd7b90 100644
+--- a/python/sglang/srt/session/streaming_session.py
++++ b/python/sglang/srt/session/streaming_session.py
+@@ -1050,7 +1050,16 @@ class StreamingSession(BasePrefixCache):
+             if mid is not None:
+                 mamba_allocator.free(mid)
+             return None
+-        rows = pool.alloc_rows(1)
++        from sglang.srt.layers.attention.qsa import pair_layer_split as _agi2_pls
++
++        if _agi2_pls.rs_enabled():
++            # agi2 request split: the restored row keeps the parked row's home, whatever the new turn's extra_key says:
++            # the saved QSA K/V are laid out for that home's members (GPT review F2, 10-30)
++            old = getattr(p.record, "req_pool_idx", None)
++            home = (int(old) & 1) if old else _agi2_pls.rs_home_of(getattr(req, "extra_key", None))
++            rows = pool._agi2_alloc_rows_by_parity([home])
++        else:
++            rows = pool.alloc_rows(1)
+         if not rows:
+             allocator.free(ids)
+             if mid is not None:

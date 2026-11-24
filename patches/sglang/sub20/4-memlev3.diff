@@ -1,0 +1,250 @@
+diff --git a/python/sglang/srt/eplb/expert_location.py b/python/sglang/srt/eplb/expert_location.py
+index 46632b3ff5..e500aa3eb4 100644
+--- a/python/sglang/srt/eplb/expert_location.py
++++ b/python/sglang/srt/eplb/expert_location.py
+@@ -15,6 +15,7 @@
+ from __future__ import annotations
+ 
+ import json
++import os
+ import logging
+ import random
+ from dataclasses import dataclass
+@@ -763,13 +764,46 @@ class ModelConfigForExpertLocation:
+             return None
+ 
+ 
++def _agi2_map_on_host(
++    metadata: Optional[ExpertLocationMetadata],
++) -> Optional[ExpertLocationMetadata]:
++    """agi2 (SGLANG_AGI2_EPLB_MAP_HOST, off by default): keep logical_to_all_physical_map on the host only.
++
++    _init_raw pads it to (layers, logical, num_physical_experts) int64 (54 MiB a GPU at 48 layers x 384 experts),
++    almost all -1 under trivial placement. Its GPU readers are the dispatch info (ep_dispatch_algorithm set), the LPLB
++    solvers (ep_dispatch_algorithm 'lp') and EPLB rebalancing (update(), enable_eplb). With none of them on, nothing on
++    the GPU reads it; the field then aliases the CPU copy, so a GPU reader added later fails loudly on the device.
++    """
++    if metadata is None or os.environ.get("SGLANG_AGI2_EPLB_MAP_HOST", "").lower() not in ("1", "true", "yes"):
++        return metadata
++    moe = get_exec().moe
++    if moe.ep_dispatch_algorithm is not None or moe.enable_eplb:
++        logger.warning(
++            "agi2 EPLB map on host: skipped (ep_dispatch_algorithm=%s, enable_eplb=%s read it on the GPU)",
++            moe.ep_dispatch_algorithm,
++            moe.enable_eplb,
++        )
++        return metadata
++    gpu_map = metadata.logical_to_all_physical_map
++    freed = gpu_map.numel() * gpu_map.element_size() if gpu_map.is_cuda else 0
++    metadata.logical_to_all_physical_map = metadata.logical_to_all_physical_map_cpu
++    logger.info(
++        "agi2 EPLB map on host: logical_to_all_physical_map %s kept on the CPU only (%.1f MiB a GPU)",
++        tuple(gpu_map.shape),
++        freed / 2**20,
++    )
++    return metadata
++
++
+ def compute_initial_expert_location_metadata(
+     model_config: ModelConfig,
+     moe_ep_rank: int,
+ ) -> Optional[ExpertLocationMetadata]:
+     data = get_exec().moe.init_expert_location
+     if data == "trivial":
+-        return ExpertLocationMetadata.init_trivial(model_config, moe_ep_rank)
++        return _agi2_map_on_host(
++            ExpertLocationMetadata.init_trivial(model_config, moe_ep_rank)
++        )
+ 
+     # TODO unify with the utils function
+     if data.endswith(".pt"):
+diff --git a/python/sglang/srt/layers/attention/flashinfer_backend.py b/python/sglang/srt/layers/attention/flashinfer_backend.py
+index 388d04d112..de4d6ea8b1 100644
+--- a/python/sglang/srt/layers/attention/flashinfer_backend.py
++++ b/python/sglang/srt/layers/attention/flashinfer_backend.py
+@@ -21,6 +21,10 @@ _AGI2_SWA_ONLY_WRAPPER0 = os.environ.get("SGLANG_AGI2_SWA_ONLY_WRAPPER0", "").lo
+ # for sliding-window rows (max_bs x (window + new tokens + 2)) instead of max_num_tokens x context_len; DFlash2's draft
+ # at 48 slots: 0.40 GB a GPU back.
+ _AGI2_SWA_GRAPH_IDX_CAP = os.environ.get("SGLANG_AGI2_SWA_GRAPH_IDX_CAP", "").lower() in ("1", "true", "yes")
++# agi2 (SGLANG_AGI2_LAZY_GRAPH_MASK, off by default): allocate the CUDA-graph custom-mask buffer (max_num_tokens x
++# context_len uint8) only when a custom-mask prefill wrapper is first created. DFlash2's draft verify runs without a
++# custom mask, so the buffer was never read: 48 MiB a GPU back at 48 slots (192 tokens), 96 MiB at 96.
++_AGI2_LAZY_GRAPH_MASK = os.environ.get("SGLANG_AGI2_LAZY_GRAPH_MASK", "").lower() in ("1", "true", "yes")
+ from dataclasses import dataclass
+ from enum import Enum, auto
+ from functools import partial
+@@ -1178,11 +1182,20 @@ class FlashInferAttnBackend(AttentionBackend):
+                 self.cuda_graph_kv_indices[i][0] = 0
+ 
+         if not self.skip_prefill:
+-            self.cuda_graph_custom_mask = torch.zeros(
+-                (max_num_tokens * self.max_context_len),
+-                dtype=torch.uint8,
+-                device="cuda",
+-            )
++            self._agi2_graph_mask_numel = max_num_tokens * self.max_context_len
++            if _AGI2_LAZY_GRAPH_MASK:
++                # agi2: allocated by _create_prefill_wrappers on the first custom-mask wrapper (see the flag above)
++                self.cuda_graph_custom_mask = None
++                logger.info(
++                    f"agi2 lazy graph mask: the {self._agi2_graph_mask_numel / 2**20:.1f} MiB custom-mask buffer "
++                    f"({max_num_tokens} x {self.max_context_len}) waits for a custom-mask wrapper"
++                )
++            else:
++                self.cuda_graph_custom_mask = torch.zeros(
++                    (max_num_tokens * self.max_context_len),
++                    dtype=torch.uint8,
++                    device="cuda",
++                )
+             self.cuda_graph_qk_indptr = [x.clone() for x in self.kv_indptr]
+             self.cuda_graph_qo_indptr = [x.clone() for x in self.kv_indptr]
+ 
+@@ -1226,6 +1239,15 @@ class FlashInferAttnBackend(AttentionBackend):
+         # For cases like DFLASH draft (ENCODER_ONLY / non-causal) we do NOT use a
+         # custom mask, so we must avoid initializing `custom_mask_buf`, otherwise
+         # FlashInfer will treat the (zero) buffer as a real mask and block attention.
++        if use_custom_mask and self.cuda_graph_custom_mask is None:
++            # agi2 (SGLANG_AGI2_LAZY_GRAPH_MASK): the first custom-mask wrapper allocates the buffer it binds
++            logger.warning(
++                f"agi2 lazy graph mask: allocating the {self._agi2_graph_mask_numel / 2**20:.1f} MiB custom-mask "
++                f"buffer for a custom-mask wrapper (bs {bs})"
++            )
++            self.cuda_graph_custom_mask = torch.zeros(
++                (self._agi2_graph_mask_numel,), dtype=torch.uint8, device="cuda"
++            )
+         wrappers = []
+         for i in range(self.num_wrappers):
+             extra = (
+diff --git a/python/sglang/srt/models/dflash.py b/python/sglang/srt/models/dflash.py
+index ce602b7fe7..5a6ebb7b9f 100644
+--- a/python/sglang/srt/models/dflash.py
++++ b/python/sglang/srt/models/dflash.py
+@@ -1137,6 +1137,31 @@ def _score_edges(
+     )
+ 
+ 
++@torch.compile(dynamic=True, backend=get_compiler_backend(), disable=_is_npu)
++def _agi2_score_edges_rows(
++    *,
++    predecessor_table: torch.Tensor,
++    successor_table: torch.Tensor,
++    successor_rows: torch.Tensor,
++    candidate_ids: torch.Tensor,
++    unary_logits: torch.Tensor,
++    hidden: torch.Tensor,
++    anchor_token_ids: torch.Tensor,
++    top_k: int,
++) -> torch.Tensor:
++    """_score_edges with the successor rows looked up in a compacted table (SGLANG_AGI2_DRAFT_SUCC_COMPACT):
++    successor_rows = remap[candidate_ids] selects the same rows the full table held, so the scores are identical."""
++    keys = successor_table[successor_rows]
++    predecessor_ids = torch.cat(
++        [anchor_token_ids[:, None, None].expand(-1, 1, top_k), candidate_ids[:, :-1]],
++        dim=1,
++    )
++    predecessors = predecessor_table[predecessor_ids]
++    return unary_logits[:, :, None] + torch.einsum(
++        "blpr,blcr->blpc", predecessors * hidden[:, :, None], keys
++    )
++
++
+ @torch.compile(dynamic=True, backend=get_compiler_backend(), disable=_is_npu)
+ def _follow_maps(maps, initial_indices, edges: int):
+     index = initial_indices
+@@ -1197,6 +1222,22 @@ class CandidateSelector(nn.Module):
+         for tensor in (candidate_ids, unary_logits, hidden):
+             torch._dynamo.mark_static(tensor, 1)
+             torch._dynamo.mark_static(tensor, 2)
++        remap = getattr(self, "_agi2_succ_remap", None)
++        if remap is not None:
++            # agi2 (SGLANG_AGI2_DRAFT_SUCC_COMPACT): candidates are subset ids, whose rows the compact table holds
++            successor_rows = remap[candidate_ids]
++            torch._dynamo.mark_static(successor_rows, 1)
++            torch._dynamo.mark_static(successor_rows, 2)
++            return _agi2_score_edges_rows(
++                predecessor_table=self.predecessor_codebook,
++                successor_table=self._agi2_succ_compact,
++                successor_rows=successor_rows,
++                candidate_ids=candidate_ids,
++                unary_logits=unary_logits,
++                hidden=hidden,
++                anchor_token_ids=anchor_token_ids,
++                top_k=self.top_k,
++            )
+         return _score_edges(
+             predecessor_table=self.predecessor_codebook,
+             successor_table=self.successor_codebook,
+@@ -1207,6 +1248,39 @@ class CandidateSelector(nn.Module):
+             top_k=self.top_k,
+         )
+ 
++    def agi2_compact_successor(self, subset_ids: torch.Tensor) -> int:
++        """SGLANG_AGI2_DRAFT_SUCC_COMPACT: keep only the successor rows of the draft's candidate subset
++        (SGLANG_AGI2_DRAFT_VOCAB). build_lattice reads successor_codebook only at candidate ids, and with the subset
++        attached every candidate is a subset id, so the compact table plus a vocab-wide row map gives the same keys.
++        The predecessor table stays whole: slot 0's predecessor is the verified anchor, which can be any token.
++        Call once, after the weights load and before the draft graph is captured. Returns the bytes freed."""
++        if getattr(self, "_agi2_succ_remap", None) is not None:
++            return 0
++        table = self.successor_codebook
++        ids = subset_ids.to(device=table.device, dtype=torch.long)
++        vocab = table.shape[0]
++        if ids.numel() == 0 or int(ids.min()) < 0 or int(ids.max()) >= vocab:
++            raise ValueError(f"agi2 draft successor compaction: subset ids outside [0, {vocab})")
++        if ids.numel() > 1 and not bool((ids[1:] > ids[:-1]).all()):
++            raise ValueError("agi2 draft successor compaction: subset ids must be sorted and unique")
++        # one extra zero row: a non-subset id (impossible while the subset is attached) reads zeros, never a
++        # neighbour's row
++        compact = torch.zeros((ids.numel() + 1, table.shape[1]), dtype=table.dtype, device=table.device)
++        compact[: ids.numel()] = table.data.index_select(0, ids)
++        remap = torch.full((vocab,), ids.numel(), dtype=torch.long, device=table.device)
++        remap[ids] = torch.arange(ids.numel(), dtype=torch.long, device=table.device)
++        freed = table.numel() * table.element_size()
++        freed -= compact.numel() * compact.element_size() + remap.numel() * remap.element_size()
++        self._agi2_succ_compact = compact
++        self._agi2_succ_remap = remap
++        table.data = torch.empty((0, table.shape[1]), dtype=table.dtype, device=table.device)
++        # the full table is gone, so an online weight update must be refused up front (as SGLANG_AGI2_HC_W8 does)
++        self._derived_weight_cache_error = (
++            "SGLANG_AGI2_DRAFT_SUCC_COMPACT compacted the draft's successor codebook at load; online weight updates "
++            "are not supported. Restart without it."
++        )
++        return freed
++
+     def sample_path(
+         self,
+         *,
+@@ -1307,6 +1381,33 @@ class DFlash2DraftModel(DFlashDraftModel):
+         w, g = self._agi2_vocab_sub
+         logger.info(f"agi2 draft vocab subset: {g.numel()} ids on this rank ({w.numel() * w.element_size() / 2**20:.1f}"
+                     f" MiB) from {path}")
++        if os.environ.get("SGLANG_AGI2_DRAFT_SUCC_COMPACT", "").lower() in ("1", "true", "yes"):
++            self._agi2_compact_successor(path, g)
++
++    def _agi2_compact_successor(self, path: str, rank_ids: torch.Tensor) -> None:
++        """SGLANG_AGI2_DRAFT_SUCC_COMPACT (CandidateSelector.agi2_compact_successor): the global subset is the union of
++        the ids every TP rank actually attached (agi2_build_vocab_subset's contiguous parts of one sorted list),
++        gathered once, so every rank compacts to the same rows and no candidate a rank can emit is missing. The file is
++        not read again (GPT review G8 follow-up, finding 2). A union that is not strictly increasing keeps the full
++        table on every rank alike."""
++        mine = rank_ids.detach().to(dtype=torch.long)
++        if get_parallel().tp_size > 1:
++            n_local = torch.tensor([mine.numel()], dtype=torch.long, device=mine.device)
++            sizes = tensor_model_parallel_all_gather(n_local, dim=0).tolist()
++            padded = torch.full((max(sizes),), -1, dtype=torch.long, device=mine.device)
++            padded[: mine.numel()] = mine
++            parts = tensor_model_parallel_all_gather(padded, dim=0).view(len(sizes), -1)
++            ids = torch.cat([parts[r, : sizes[r]] for r in range(len(sizes))]).cpu()
++        else:
++            ids = mine.cpu()
++        n = ids.numel()
++        if n == 0 or (n > 1 and not bool((ids[1:] > ids[:-1]).all())):
++            logger.warning("agi2 draft successor compaction: the ranks' attached subset parts do not form one sorted "
++                           "list; the full successor table is kept")
++            return
++        freed = self.candidate_selector.agi2_compact_successor(ids)
++        logger.info(f"agi2 draft successor compaction: {n} of {self.candidate_selector._agi2_succ_remap.numel()} rows"
++                    f" kept, {freed / 2**20:.1f} MiB freed")
+ 
+     def _transform_unary_logits(self, logits: torch.Tensor) -> torch.Tensor:
+         logits = logits.float()

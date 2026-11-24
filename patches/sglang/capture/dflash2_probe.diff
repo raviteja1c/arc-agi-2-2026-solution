@@ -1,0 +1,411 @@
+diff --git a/python/sglang/srt/speculative/agi2_dflash_probe.py b/python/sglang/srt/speculative/agi2_dflash_probe.py
+new file mode 100644
+index 0000000000..27601f54a7
+--- /dev/null
++++ b/python/sglang/srt/speculative/agi2_dflash_probe.py
+@@ -0,0 +1,382 @@
++"""agi2 DFlash2 acceptance probe (SGLANG_AGI2_DFLASH_PROBE_DIR; off by default, an offline measurement tool).
++
++What it answers: for recorded harness conversations (token histories the served model actually wrote), what would the
++DFlash2 draft have proposed at every generated position, for block sizes other than the served 4, and how likely would
++those proposals have been accepted? A probe request is a teacher-forced prefill of one history
++(``sampling_params.custom_params = {"agi2_probe": "<name>"}``, max_new_tokens 1). While the target prefills it, this
++module takes the target's captured DFlash features of every chunk (the same rows the worker writes into the draft KV),
++and, for every anchor position t inside a generated span, runs the draft exactly as a decode step at anchor t would:
++block [h_t, mask x (B-1)] at positions t .. t+B-1, attending (non-causal, sliding window) to the context features of
++positions < t and to the block itself, then the selector's lattice (top-K candidates per slot, pairwise transitions).
++
++Per anchor and block size it stores what the acceptance simulations need, all conditioned on the recorded history h:
++- ``logq``  [M, B-1]: log q_j(h_{t+j} | h_{t+j-1}) under the selector at the request's temperature (the probability the
++  served sampled draft gives the token the model actually wrote, given the previous slot drafted the history token);
++  -inf when h_{t+j} is not among slot j's candidates or the path already left them.
++- ``idx``   [M, B-1]: h_{t+j}'s index among slot j's K candidates (-1: absent); ``rank`` its rank in the transition row
++  from the history predecessor (0 = the draft's top choice; K = absent).
++- ``conf``  [M, B-1]: the largest transition probability out of the history predecessor (the draft's confidence).
++- ``glcp``  [M]: how many of the greedy (argmax) path's tokens equal the history (a deterministic chain draft).
++- ``top``   [M, TOPN]: the TOPN largest path log-probabilities in the draft's prefix tree (exact beam), sorted: a
++  best-N tree contains the history path to depth d iff cumsum(logq)[d] >= top[N-1].
++- ``vlen``  [M]: continuation tokens left in the span (cap for every depth).
++Laptop scripts combine these with the served target probabilities (fn-conf ``lp_samp``) into expected accepted lengths:
++sampled chain (exact rejection sampling, what DFLASH serves), greedy chain, best-N trees, budgeted allocations.
++
++Inputs: ``$DIR/requests/<name>.json`` = {"spans": [[start, end], ...], "temperature": T}, positions in the history.
++Outputs: ``$DIR/out/<name>.B<B>.npz`` and ``$DIR/out/<name>.json`` (timings, counts). Nothing else changes: requests
++without the key, or a server without the env, run exactly as before.
++"""
++
++from __future__ import annotations
++
++import json
++import logging
++import os
++import time
++from typing import Any, Dict, List, Optional
++
++import numpy as np
++import torch
++import torch.nn.functional as F
++
++logger = logging.getLogger(__name__)
++
++DIR = os.environ.get("SGLANG_AGI2_DFLASH_PROBE_DIR") or None
++ENABLED = DIR is not None
++KEY = "agi2_probe"
++BLOCKS = tuple(int(b) for b in os.environ.get("SGLANG_AGI2_DFLASH_PROBE_BLOCKS", "4,6,8,12,16,32").split(",") if b)
++ROWS = int(os.environ.get("SGLANG_AGI2_DFLASH_PROBE_ROWS", "2048"))  # draft rows per batch (anchors x block)
++TOPN = int(os.environ.get("SGLANG_AGI2_DFLASH_PROBE_TOPN", "64"))
++# Optional training-data dump for a re-ranker over the selector's lattice: at block DUMP_BLOCK, for a deterministic
++# DUMP_FRAC sample of anchors, the draft's per-slot hidden states (after its final norm, bf16), the K candidate ids
++# and their unary logits. 0 = off.
++DUMP_BLOCK = int(os.environ.get("SGLANG_AGI2_DFLASH_PROBE_DUMP_BLOCK", "0"))
++DUMP_FRAC = float(os.environ.get("SGLANG_AGI2_DFLASH_PROBE_DUMP_FRAC", "0.1"))
++# Optional training capture for fine-tuning the draft (its fc frozen): the draft's projected context features of every
++# position (project_target_hidden's output, bf16 bits as int16), $DIR/out/<name>.feat.npy [N, hidden]. With
++# SGLANG_AGI2_DFLASH_PROBE_BLOCKS empty the probe then only captures (no per-anchor draft runs, no context K/V).
++CAPTURE = os.environ.get("SGLANG_AGI2_DFLASH_CAPTURE", "0") == "1"
++
++_state: Dict[str, Dict[str, Any]] = {}
++
++
++def _dump_mask(anchors: torch.Tensor) -> torch.Tensor:
++    """A deterministic per-position sample (Knuth multiplicative hash), the same on every run."""
++    h = (anchors.to(torch.int64) * 2654435761) % 4294967296
++    return h < int(DUMP_FRAC * 4294967296)
++
++
++def probe_name(req: Any) -> Optional[str]:
++    sp = getattr(req, "sampling_params", None)
++    cp = getattr(sp, "custom_params", None)
++    if isinstance(cp, dict) and cp.get(KEY):
++        return str(cp[KEY])
++    return None
++
++
++class _ProbeAttn(torch.nn.Module):
++    """Stands in for a draft layer's RadixAttention during a probe batch: SDPA over [context K/V ; block K/V]."""
++
++    def __init__(self, orig, ctx_k, ctx_v, mask, scaling):
++        super().__init__()
++        self.orig = orig
++        self.ctx_k, self.ctx_v, self.mask, self.scaling = ctx_k, ctx_v, mask, scaling
++
++    def forward(self, q, k, v, forward_batch=None, **kw):
++        h, kvh, d = self.orig.tp_q_head_num, self.orig.tp_k_head_num, self.orig.head_dim
++        n = q.shape[0]
++        qq = q.view(n, h, d).transpose(0, 1).unsqueeze(0)  # [1, h, n, d]
++        kk = torch.cat([self.ctx_k, k.view(n, kvh, d)], dim=0)  # [nc + n, kvh, d]
++        vv = torch.cat([self.ctx_v, v.view(n, kvh, d)], dim=0)
++        rep = h // kvh
++        kk = kk.transpose(0, 1).repeat_interleave(rep, dim=0).unsqueeze(0)  # [1, h, nk, d]
++        vv = vv.transpose(0, 1).repeat_interleave(rep, dim=0).unsqueeze(0)
++        o = F.scaled_dot_product_attention(qq, kk, vv, attn_mask=self.mask[None, None], scale=self.scaling)
++        return o[0].transpose(0, 1).reshape(n, h * d)
++
++
++def _ctx_kv(worker, ctx_hidden: torch.Tensor, positions: torch.Tensor):
++    """Per draft layer, the context K/V exactly as the worker materializes them (kv_proj_only, k_norm, rope), cast
++    through the draft KV pool's dtype (fp8 pools round-trip, as the served draft reads them)."""
++    pool = worker.draft_model_runner.token_to_kv_pool
++    dt = getattr(pool, "dtype", None)  # the logical dtype (an fp8 pool stores it as uint8)
++    fp8 = dt if dt in (torch.float8_e4m3fn, torch.float8_e5m2) else None
++    out = []
++    for layer in worker.draft_model.layers:
++        attn = layer.self_attn
++        hid = worker.draft_model.prepare_context_hidden_for_kv(layer, ctx_hidden)
++        k, v = attn.kv_proj_only(hid)
++        k = attn.apply_k_norm(k)
++        k = attn.apply_k_rope(positions, k)
++        k = k.view(-1, attn.num_kv_heads, attn.head_dim)
++        v = v.view(-1, attn.num_kv_heads, attn.head_dim)
++        if fp8 is not None:
++            k = k.to(fp8).to(k.dtype)
++            v = v.to(fp8).to(v.dtype)
++        out.append((k, v))
++    return out
++
++
++def _run_block(worker, st, anchors: torch.Tensor, B: int):
++    """One batch of anchors at block size B. Returns a dict of tensors [A, ...] (see the module docstring)."""
++    from sglang.srt.lora.layers import unwrap_lora_layer
++    from sglang.srt.speculative.dflash_worker_v2 import _resolve_dflash_embedding_module, _selector_lattice
++
++    dev = anchors.device
++    draft = worker.draft_model
++    target = worker.target_worker.model_runner.model
++    if draft.lm_head is None:
++        draft.lm_head = unwrap_lora_layer(getattr(target, "lm_head"))
++    embed = unwrap_lora_layer(_resolve_dflash_embedding_module(draft, target))
++    ids = st["ids"]  # [N] int64 on device
++    N = int(ids.shape[0])
++    A = int(anchors.shape[0])
++    off = torch.arange(B, device=dev)
++    pos = anchors[:, None] + off[None, :]  # [A, B]
++    block_ids = torch.full((A, B), int(worker._mask_token_id), dtype=torch.long, device=dev)
++    block_ids[:, 0] = ids[anchors]
++    emb = embed(block_ids.view(-1))
++    if getattr(worker, "_noise_embed_scale", 1.0) != 1.0:
++        emb = emb * worker._noise_embed_scale
++
++    # context window covering every anchor's view: positions [lo, hi) with hi = max anchor
++    win = st["window_left"]
++    lo = max(0, int(anchors.min()) - win - 1)
++    hi = int(anchors.max())
++    nc = hi - lo
++    ctx_pos = torch.arange(lo, hi, device=dev)
++    qpos = pos.view(-1)  # [A*B]
++    a_of_row = torch.arange(A, device=dev).repeat_interleave(B)
++    t_of_row = anchors[a_of_row]
++    m_ctx = (ctx_pos[None, :] >= (qpos[:, None] - win)) & (ctx_pos[None, :] < t_of_row[:, None])
++    m_blk = a_of_row[:, None] == a_of_row[None, :]
++    mask = torch.cat([m_ctx, m_blk], dim=1)
++
++    saved = []
++    try:
++        for li, layer in enumerate(draft.layers):
++            k_all, v_all = st["kv"][li]
++            pa = _ProbeAttn(layer.self_attn.attn, k_all[lo:hi], v_all[lo:hi], mask, layer.self_attn.scaling)
++            saved.append(layer.self_attn.attn)
++            layer.self_attn.attn = pa
++        draft.set_block_size(B)
++        out = draft.forward(input_ids=None, positions=qpos, forward_batch=None, input_embeds=emb)
++    finally:
++        for li, layer in enumerate(draft.layers):
++            if li < len(saved):
++                layer.self_attn.attn = saved[li]
++        draft.set_block_size(int(worker.block_size))
++    hid = out.hidden_states.view(A, B, -1)
++    S = B - 1
++    pred = hid[:, 1:, :]
++    # _selector_lattice inlined (dflash_worker_v2.py), to keep the unary logits for the dump
++    cand_flat, unary_flat = draft.compute_candidates(pred.reshape(-1, pred.shape[-1]))
++    cand = cand_flat.view(A, S, -1)
++    unary = unary_flat.view(A, S, -1)
++    scores = draft.candidate_selector.build_lattice(candidate_ids=cand, unary_logits=unary, hidden_states=pred,
++                                                    anchor_token_ids=block_ids[:, 0])  # [A,S,K,K]
++    K = cand.shape[-1]
++    dump = None
++    if B == DUMP_BLOCK:
++        sel = _dump_mask(anchors)
++        if bool(sel.any()):
++            dump = dict(d_anchors=anchors[sel].to(torch.int32), d_hid=pred[sel].contiguous().view(torch.int16),
++                        d_cand=cand[sel].to(torch.int32), d_unary=unary[sel].half())
++    T = float(st["temperature"])
++    logq = torch.log_softmax(scores.float() / T, dim=-1)  # [A,S,Kp,Ks]
++
++    # history tokens for slots 1..S, and the valid length (inside the span)
++    j = torch.arange(1, B, device=dev)
++    hpos = anchors[:, None] + j[None, :]  # [A,S]
++    vlen = (st["span_end"][anchors] - anchors - 1).clamp(min=0)  # tokens left after the anchor in its span
++    valid = j[None, :] <= vlen[:, None]
++    htok = ids[hpos.clamp(max=N - 1)]
++    match = cand == htok[:, :, None]  # [A,S,K]
++    present = match.any(-1) & valid
++    idx = torch.where(present, match.float().argmax(-1), torch.full_like(htok, -1))
++    prev = torch.cat([torch.zeros_like(idx[:, :1]), idx[:, :-1]], dim=1)  # slot 0 predecessor row: the anchor (row 0)
++    prev_ok = torch.cat([torch.ones_like(present[:, :1]), present[:, :-1]], dim=1)
++    prev_c = prev.clamp(min=0)
++    rows = logq.gather(2, prev_c[:, :, None, None].expand(-1, -1, 1, K))[:, :, 0, :]  # [A,S,K] from predecessor
++    lq = rows.gather(2, idx.clamp(min=0)[:, :, None])[:, :, 0]
++    ok = present & prev_ok
++    lq = torch.where(ok, lq, torch.full_like(lq, float("-inf")))
++    rank = (rows > lq[:, :, None]).sum(-1)
++    rank = torch.where(ok, rank, torch.full_like(rank, K))
++    conf = rows.max(-1).values.exp()
++
++    # greedy chain (argmax walk) and its agreement with the history; gcum = the walk's own cumulative log q (a
++    # draft-only quantity, for chain-length budgets)
++    g = scores[:, 0, 0, :].argmax(-1)
++    gtok = [cand[:, 0, :].gather(1, g[:, None])[:, 0]]
++    glq = [logq[:, 0, 0, :].gather(1, g[:, None])[:, 0]]
++    for s in range(1, S):
++        row = logq[:, s].gather(1, g[:, None, None].expand(-1, 1, K))[:, 0, :]
++        g2 = scores[:, s].gather(1, g[:, None, None].expand(-1, 1, K))[:, 0, :].argmax(-1)
++        glq.append(row.gather(1, g2[:, None])[:, 0])
++        g = g2
++        gtok.append(cand[:, s, :].gather(1, g[:, None])[:, 0])
++    gtok = torch.stack(gtok, 1)
++    gcum = torch.cumsum(torch.stack(glq, 1), dim=1)
++    eq = (gtok == htok) & valid
++    glcp = torch.cumprod(eq.int(), dim=1).sum(1)
++
++    # exact top-N path log-probabilities of the draft's prefix tree (beam of width TOPN per depth)
++    W = TOPN
++    blp, bidx = torch.topk(logq[:, 0, 0, :], min(W, K), dim=-1)
++    allp = [blp]
++    for s in range(1, S):
++        r = logq[:, s].gather(1, bidx[:, :, None].expand(-1, -1, K))  # [A,w,K]
++        c = (blp[:, :, None] + r).reshape(A, -1)
++        blp, flat = torch.topk(c, min(W, c.shape[1]), dim=-1)
++        bidx = flat % K
++        allp.append(blp)
++    allp = torch.cat(allp, dim=1)
++    top = torch.topk(allp, min(TOPN, allp.shape[1]), dim=-1).values
++    if top.shape[1] < TOPN:
++        top = F.pad(top, (0, TOPN - top.shape[1]), value=float("-inf"))
++    out = dict(logq=lq.half(), idx=idx.to(torch.int8), rank=rank.to(torch.int8), conf=conf.half(),
++               glcp=glcp.to(torch.int8), gcum=gcum.half(), top=top.half(), vlen=vlen.clamp(max=127).to(torch.int8))
++    if dump is not None:
++        out.update(dump)
++    return out
++
++
++def _process_anchors(worker, st, upto: int) -> None:
++    """Every not-yet-done anchor t <= upto (its context, positions < t, is in hand)."""
++    anc = st["anchors"]
++    i0 = st["done"]
++    i1 = int(np.searchsorted(anc, upto, side="right"))
++    if i1 <= i0:
++        return
++    dev = st["ids"].device
++    for B in BLOCKS:
++        A = max(8, ROWS // B)
++        i = i0
++        while i < i1:
++            j = min(i1, i + A)
++            # keep a batch's anchors close (a span gap would blow up the context window)
++            while j > i + 1 and anc[j - 1] - anc[i] > 4 * A + 64:
++                j -= 1
++            a = torch.as_tensor(anc[i:j], dtype=torch.long, device=dev)
++            with torch.inference_mode():
++                r = _run_block(worker, st, a, B)
++            st["res"][B].append({k: v.cpu() for k, v in r.items()})
++            i = j
++    st["done"] = i1
++
++
++def on_extend(worker, batch, aux_hidden: Optional[torch.Tensor]) -> None:
++    """Called by the DFLASH worker with every prefill chunk's captured target features (before they are dropped)."""
++    if not ENABLED or aux_hidden is None or batch.reqs is None:
++        return
++    off = 0
++    for i, req in enumerate(batch.reqs):
++        n = int(batch.extend_lens[i])
++        p0 = int(batch.prefix_lens[i])
++        rows = aux_hidden[off:off + n]
++        off += n
++        name = probe_name(req)
++        if name is None:
++            continue
++        try:
++            _on_chunk(worker, req, name, p0, n, rows)
++        except Exception as e:  # noqa: BLE001 - a probe failure must never take the server down
++            logger.exception("agi2 dflash probe %s failed: %s", name, e)
++            _state.pop(req.rid, None)
++
++
++def _on_chunk(worker, req, name, p0, n, rows) -> None:
++    st = _state.get(req.rid)
++    if st is None:
++        # each block size recompiles the draft's compiled helpers (grouped conv, selector edges) once
++        # (imported under another name: a plain `import torch._dynamo` here would make `torch` local to this function)
++        import torch._dynamo as _dynamo
++
++        for knob in ("cache_size_limit", "recompile_limit"):
++            if hasattr(_dynamo.config, knob):
++                setattr(_dynamo.config, knob, max(int(getattr(_dynamo.config, knob)), 64))
++        with open(os.path.join(DIR, "requests", f"{name}.json")) as f:
++            meta = json.load(f)
++        ids_list = list(req.origin_input_ids)
++        N = len(ids_list)
++        dev = rows.device
++        span_end = np.full(N, -1, dtype=np.int64)
++        anchors = []
++        for s, e in meta["spans"]:
++            s, e = int(s), min(int(e), N)
++            span_end[s:e] = e
++            anchors.extend(range(s, e - 1))  # an anchor needs one continuation token in its span
++        st = dict(name=name, meta=meta, N=N, next=0, done=0, t0=time.time(), temperature=float(meta["temperature"]),
++                  ids=torch.as_tensor(ids_list, dtype=torch.long, device=dev),
++                  span_end=torch.as_tensor(span_end, device=dev),
++                  anchors=np.asarray(sorted(set(anchors)), dtype=np.int64),
++                  window_left=int(worker.draft_model.layers[0].self_attn.sliding_window_size),
++                  kv=None, res={B: [] for B in BLOCKS}, prefill_s=0.0, probe_s=0.0)
++        if st["window_left"] < 0:
++            st["window_left"] = 1 << 30
++        _state[req.rid] = st
++        logger.info("agi2 dflash probe %s: %d tokens, %d anchors, blocks %s, window_left %d, T %.2f", name, N,
++                    len(st["anchors"]), BLOCKS, st["window_left"], st["temperature"])
++    if p0 != st["next"]:
++        raise RuntimeError(f"non-contiguous chunk: prefix {p0}, expected {st['next']}")
++    t1 = time.time()
++    with torch.inference_mode():
++        ctx = worker.draft_model.project_target_hidden(rows)
++        if CAPTURE:
++            st.setdefault("feat", []).append(ctx.to(torch.bfloat16).view(torch.int16).cpu())
++        if not BLOCKS:  # capture only: no draft runs, so no context K/V
++            st["next"] = p0 + n
++            st["probe_s"] += time.time() - t1
++            if st["next"] >= st["N"]:
++                _finish(st)
++                _state.pop(req.rid, None)
++            return
++        pos = torch.arange(p0, p0 + n, device=rows.device)
++        kv = _ctx_kv(worker, ctx, pos)
++    if st["kv"] is None:
++        st["kv"] = [(torch.empty((st["N"],) + k.shape[1:], dtype=k.dtype, device=k.device),
++                     torch.empty((st["N"],) + v.shape[1:], dtype=v.dtype, device=v.device)) for k, v in kv]
++    for li, (k, v) in enumerate(kv):
++        st["kv"][li][0][p0:p0 + n] = k
++        st["kv"][li][1][p0:p0 + n] = v
++    st["next"] = p0 + n
++    _process_anchors(worker, st, upto=st["next"])
++    torch.cuda.synchronize()
++    st["probe_s"] += time.time() - t1
++    if st["next"] >= st["N"]:
++        _finish(st)
++        _state.pop(req.rid, None)
++
++
++def _finish(st) -> None:
++    out = os.path.join(DIR, "out")
++    os.makedirs(out, exist_ok=True)
++    counts = {}
++    for B, parts in st["res"].items():
++        if not parts:
++            continue
++        main_keys = [k for k in parts[0] if not k.startswith("d_")]
++        arr = {k: torch.cat([p[k] for p in parts]).numpy() for k in main_keys}
++        arr["anchors"] = st["anchors"][: arr["glcp"].shape[0]].astype(np.int32)
++        np.savez_compressed(os.path.join(out, f"{st['name']}.B{B}.npz"), **arr)
++        counts[B] = int(arr["glcp"].shape[0])
++        dparts = [p for p in parts if "d_hid" in p]
++        if dparts:  # the re-ranker dump: hid holds bf16 bits as int16
++            d = {k[2:]: torch.cat([p[k] for p in dparts]).numpy() for k in ("d_anchors", "d_hid", "d_cand", "d_unary")}
++            np.save(os.path.join(out, f"{st['name']}.dump.B{B}.hid.npy"), d.pop("hid"))
++            np.savez(os.path.join(out, f"{st['name']}.dump.B{B}.npz"), **d)
++            counts[f"dump{B}"] = int(d["anchors"].shape[0])
++    if st.get("feat"):
++        feat = torch.cat(st["feat"]).numpy()
++        if feat.shape[0] != st["N"]:
++            raise RuntimeError(f"capture of {st['name']}: {feat.shape[0]} feature rows for {st['N']} tokens")
++        np.save(os.path.join(out, f"{st['name']}.feat.npy"), feat)
++        counts["feat"] = [int(x) for x in feat.shape]
++    info = dict(name=st["name"], tokens=st["N"], anchors=int(len(st["anchors"])), counts=counts, blocks=list(BLOCKS),
++                temperature=st["temperature"], window_left=st["window_left"], topn=TOPN,
++                wall_s=round(time.time() - st["t0"], 1), probe_s=round(st["probe_s"], 1))
++    with open(os.path.join(out, f"{st['name']}.json"), "w") as f:
++        json.dump(info, f)
++    logger.info("agi2 dflash probe %s done: %s", st["name"], info)
+diff --git a/python/sglang/srt/speculative/dflash_worker_v2.py b/python/sglang/srt/speculative/dflash_worker_v2.py
+index 7a933bc065..079bdadc00 100644
+--- a/python/sglang/srt/speculative/dflash_worker_v2.py
++++ b/python/sglang/srt/speculative/dflash_worker_v2.py
+@@ -74,6 +74,7 @@ from sglang.srt.speculative.dflash_utils import (
+     sharded_verify_topk,
+ )
+ from sglang.srt.managers.auxiliary_output import append_auxiliary_output
++from sglang.srt.speculative import agi2_dflash_probe as _agi2_probe
+ from sglang.srt.speculative import fn_conf as _fn_conf
+ from sglang.srt.speculative import fn_conf_host as _fn_conf_host
+ from sglang.srt.speculative.domino_utils import (
+@@ -2674,6 +2675,10 @@ class DFlashWorkerV2(BaseSpecWorker):
+                 positions=positions,
+                 extend_lens=ctx_lens,
+             )
++            if _agi2_probe.ENABLED:
++                # agi2 (SGLANG_AGI2_DFLASH_PROBE_DIR, off by default): the offline acceptance probe reads this chunk's
++                # target features for requests that ask (custom_params agi2_probe); nothing else changes.
++                _agi2_probe.on_extend(self, batch, logits_output.hidden_states)
+ 
+             # Avoid copying large hidden-state buffers to CPU in overlap scheduling.
+             logits_output.hidden_states = None

@@ -1,0 +1,790 @@
+{
+ "files": {
+  ".gitattributes": {
+   "sha256": null,
+   "size": 1519
+  },
+  "LICENSE": {
+   "sha256": null,
+   "size": 3221
+  },
+  "MANIFEST.sha256": {
+   "sha256": null,
+   "size": 20736
+  },
+  "README.md": {
+   "sha256": null,
+   "size": 1497
+  },
+  "layer-00000-experts-0000-0127.safetensors": {
+   "sha256": "033ee04fccdd5a147b6e086d5f0942d7fc79ecf5b036feac18af4a8f78635c7a",
+   "size": 354098208
+  },
+  "layer-00000-experts-0128-0255.safetensors": {
+   "sha256": "45f98265f79d64010ced66e496be04d31b1ce0920c3b9ed62b4281fa10beb580",
+   "size": 354099528
+  },
+  "layer-00000-experts-0256-0383.safetensors": {
+   "sha256": "2171daf45c194c85e5bfc51e7cedc3cc30ce2b1a35fcbcb486577e475c357b30",
+   "size": 354099528
+  },
+  "layer-00000-experts-0384-0511.safetensors": {
+   "sha256": "b9d1b27ab8bfe0c695c6cde4a9d54891f51d062d0dbae8af9f1e27746f7102ce",
+   "size": 354099528
+  },
+  "layer-00001-experts-0000-0127.safetensors": {
+   "sha256": "780a0ea7090c2c690163e378ed063a0a41b34fd9ed5b67de3d5d2b119157b099",
+   "size": 354098208
+  },
+  "layer-00001-experts-0128-0255.safetensors": {
+   "sha256": "0c54ca9ad4a9048ea0f2fda904c9fbd3237206cb6e539b6b4d1cac3b38d88dac",
+   "size": 354099528
+  },
+  "layer-00001-experts-0256-0383.safetensors": {
+   "sha256": "8312cc33833a2e4929cb72aad0e5afbad2f3ad899119f29808e5fd146110eb00",
+   "size": 354099528
+  },
+  "layer-00001-experts-0384-0511.safetensors": {
+   "sha256": "1014946dd1ba354cddcf63bd7ae87907ecc4812f3a1d70fdaaf4934a088b2202",
+   "size": 354099528
+  },
+  "layer-00002-experts-0000-0127.safetensors": {
+   "sha256": "1c5d9d63e322392bef4365a7383949ba73e80b15aa5eb67a5a5cb49d0d9240b3",
+   "size": 354098208
+  },
+  "layer-00002-experts-0128-0255.safetensors": {
+   "sha256": "22be77c79e05bccea050509f3a1ff861166832521b9c438e02babc5a58dee7ad",
+   "size": 354099528
+  },
+  "layer-00002-experts-0256-0383.safetensors": {
+   "sha256": "946b1d715653fff118adac64fcf5304f3dfb0f848baa6c356e9ccc03759480d0",
+   "size": 354099528
+  },
+  "layer-00002-experts-0384-0511.safetensors": {
+   "sha256": "816aac8b338e9b2080c414ad5d076159ed2979875cecf2656f21f21783b8aab9",
+   "size": 354099528
+  },
+  "layer-00003-experts-0000-0127.safetensors": {
+   "sha256": "865499ccc2e6d9b935a974bc17174ef2623789a33936724d4d05c401136f78fb",
+   "size": 354098208
+  },
+  "layer-00003-experts-0128-0255.safetensors": {
+   "sha256": "2d743c9137e2f2a83c80dc996ab53b6ef987d4d44769ca65e760efa7f52997eb",
+   "size": 354099528
+  },
+  "layer-00003-experts-0256-0383.safetensors": {
+   "sha256": "41ebd97d97b45d6caacd1e739f88ea79c1739bf37410e3ad40ee3c4535fa82a2",
+   "size": 354099528
+  },
+  "layer-00003-experts-0384-0511.safetensors": {
+   "sha256": "be7e09de8818f5ef982a3176d7d387536a0ed040af2ca4a6f589d544534db5f5",
+   "size": 354099528
+  },
+  "layer-00004-experts-0000-0127.safetensors": {
+   "sha256": "12fce8361d7b8b6441b179fb0205f3d9a6c38a4842bb39b2cbf1ccdd347283d7",
+   "size": 354098208
+  },
+  "layer-00004-experts-0128-0255.safetensors": {
+   "sha256": "d1672a641d8b40653c35c45fd40af1769aafc54824048a01faf1cd33ee08b760",
+   "size": 354099528
+  },
+  "layer-00004-experts-0256-0383.safetensors": {
+   "sha256": "4ee524f17510462331690e28f2424e27df9e674b97036514d99c2edcae953e6a",
+   "size": 354099528
+  },
+  "layer-00004-experts-0384-0511.safetensors": {
+   "sha256": "b722f53d43922cf9caadfd2802fe5a9dc1519d890693c69c6a6fb62298148bcd",
+   "size": 354099528
+  },
+  "layer-00005-experts-0000-0127.safetensors": {
+   "sha256": "5441e7d2a965d5812a1a6e5cdbaf7242cf4033580a4ef62840025d71cf4c9bcb",
+   "size": 354098208
+  },
+  "layer-00005-experts-0128-0255.safetensors": {
+   "sha256": "fa588d9e01bd268a484cfb6c23f17574daf38dd11c7fa6a6159fc9f89be284f7",
+   "size": 354099528
+  },
+  "layer-00005-experts-0256-0383.safetensors": {
+   "sha256": "ba1d75880782f764c091413c9ff12c574d0b15509fa1f5137c5dced678ad1575",
+   "size": 354099528
+  },
+  "layer-00005-experts-0384-0511.safetensors": {
+   "sha256": "15de9ab724adce0bd958f150f542936695b47ade6320b51b03faa39c1326ce64",
+   "size": 354099528
+  },
+  "layer-00006-experts-0000-0127.safetensors": {
+   "sha256": "a37fdc9d365b216dde8aca1ff903c59bf7aca3b0f5bc4605d82c0367cb565997",
+   "size": 354098208
+  },
+  "layer-00006-experts-0128-0255.safetensors": {
+   "sha256": "54c209546118b35141af48bd603830e94b72d7eb0007ac1dddcfe42f8d89158b",
+   "size": 354099528
+  },
+  "layer-00006-experts-0256-0383.safetensors": {
+   "sha256": "b0e962bd3fd65a8b1e8bae88d10b1390e0d6e289e9d672e27cf5688490521c0e",
+   "size": 354099528
+  },
+  "layer-00006-experts-0384-0511.safetensors": {
+   "sha256": "b8ea02361fbd25de45d2e95aaf08c8b728942a3b0db0da84daf1654b70c347c4",
+   "size": 354099528
+  },
+  "layer-00007-experts-0000-0127.safetensors": {
+   "sha256": "5e1a4955c2a666cbdf2b61f44b8224945988a845bee8fff527c71172921087c7",
+   "size": 354098208
+  },
+  "layer-00007-experts-0128-0255.safetensors": {
+   "sha256": "eec09727640e29fa1713a579e5a296f6faea64b4b69e6f28adb7be8511388723",
+   "size": 354099528
+  },
+  "layer-00007-experts-0256-0383.safetensors": {
+   "sha256": "9c0961ad02ec9a5c01f12c52ea94357619c573b6010302ebad3f111cdb0bd6f9",
+   "size": 354099528
+  },
+  "layer-00007-experts-0384-0511.safetensors": {
+   "sha256": "748a5dab5bb9284043902849788f6d880460ff5692131f17676eaf0b8232c249",
+   "size": 354099528
+  },
+  "layer-00008-experts-0000-0127.safetensors": {
+   "sha256": "dc952d5d93a32c12e545048a5267c0a0954d6ca3643940b216bee20b98fa910d",
+   "size": 354098208
+  },
+  "layer-00008-experts-0128-0255.safetensors": {
+   "sha256": "c18f7116fb6f87ebbb0ea5be17eb0d5badd4b9846ac017d3a3b791c683430199",
+   "size": 354099528
+  },
+  "layer-00008-experts-0256-0383.safetensors": {
+   "sha256": "b8ae42f37c4c6285a16f82291370e03b2351a17cbbdb1574f78f76be2d0b3b1c",
+   "size": 354099528
+  },
+  "layer-00008-experts-0384-0511.safetensors": {
+   "sha256": "cd2a67a73ed244d1e3e9cbfdf0e930916bc9f00cb1e37ebacd0311b0d92001f1",
+   "size": 354099528
+  },
+  "layer-00009-experts-0000-0127.safetensors": {
+   "sha256": "e5efd8107bc0fcc8dba4d0e423139f3ae04b9891173f250b7e38b509f7e08097",
+   "size": 354098208
+  },
+  "layer-00009-experts-0128-0255.safetensors": {
+   "sha256": "4bfee09925ff7830494527e06b569c958dd6771cdc5f6eb2bf4bcfb7411d5e60",
+   "size": 354099528
+  },
+  "layer-00009-experts-0256-0383.safetensors": {
+   "sha256": "9fca08dcb1deb5d03b9471098af34136f23debc9be1531ae8e9aba72f0b01f3b",
+   "size": 354099528
+  },
+  "layer-00009-experts-0384-0511.safetensors": {
+   "sha256": "3683dbec5b623624c75e91dbbaa6e8748250ced0f3ca40d36624f90cb180867a",
+   "size": 354099528
+  },
+  "layer-00010-experts-0000-0127.safetensors": {
+   "sha256": "d1837534907a476e71987953a0f397cc87461c5466b2b0aeed30a51b928916a8",
+   "size": 354099744
+  },
+  "layer-00010-experts-0128-0255.safetensors": {
+   "sha256": "60e8f9757b9b3ece690276053b6d828e8a4e86eab7afdb4ac4418cda7fa1660b",
+   "size": 354101064
+  },
+  "layer-00010-experts-0256-0383.safetensors": {
+   "sha256": "298fea95e6321ebff9486e9509dd2fa6cb14ffef6dbfb60f7dcf4ef0e15d6a5d",
+   "size": 354101064
+  },
+  "layer-00010-experts-0384-0511.safetensors": {
+   "sha256": "317b9a43097e7dc2f741557cdb0cd9a3b817c21b9fc1f91b1c2a9192e796818e",
+   "size": 354101064
+  },
+  "layer-00011-experts-0000-0127.safetensors": {
+   "sha256": "4586932e9b71d2fcdbdc680e33e781afa795698687c58af27096fe9076589fd0",
+   "size": 354099744
+  },
+  "layer-00011-experts-0128-0255.safetensors": {
+   "sha256": "509bcbe5761806730b0a5f46c9999e2afe084741c7b7861a674479c8eea6f29b",
+   "size": 354101064
+  },
+  "layer-00011-experts-0256-0383.safetensors": {
+   "sha256": "a96545ae20223e860954f13117302cce6a3b5c8790df9df9c3f22d48c0c0e5cf",
+   "size": 354101064
+  },
+  "layer-00011-experts-0384-0511.safetensors": {
+   "sha256": "36444ca55b1b0c5245c1e7801828ee808ab361e62b1caf4e14a4a95af1ab1cd1",
+   "size": 354101064
+  },
+  "layer-00012-experts-0000-0127.safetensors": {
+   "sha256": "81796dfece38f43745d33366f98a0577dcdc1c0e862e74f79d4f75d8ecb12a86",
+   "size": 354099744
+  },
+  "layer-00012-experts-0128-0255.safetensors": {
+   "sha256": "918ead2b0558a31013e48ae504643613afa53f695cdbad0bfcb5cc7c63094365",
+   "size": 354101064
+  },
+  "layer-00012-experts-0256-0383.safetensors": {
+   "sha256": "0c7fc0dd78d8a90033ccc3af666af7687f39029aa2729709106eb6220c885082",
+   "size": 354101064
+  },
+  "layer-00012-experts-0384-0511.safetensors": {
+   "sha256": "c743adacdceb4978bf16c301c5ed6e73fa4f009dc375c6ee03f3f09bd14a13a5",
+   "size": 354101064
+  },
+  "layer-00013-experts-0000-0127.safetensors": {
+   "sha256": "42de7d297f6adfc1b3c851a2992a21756934395a161f95051b8a225c5b2d3c8f",
+   "size": 354099744
+  },
+  "layer-00013-experts-0128-0255.safetensors": {
+   "sha256": "1495b49612f52d107a3c4e81178b2e0ecdf4ee54f48c4ccaecab26b45ce70dc5",
+   "size": 354101064
+  },
+  "layer-00013-experts-0256-0383.safetensors": {
+   "sha256": "d8124def0a63391f9d4c674fd940454659dbd7628ca27cc0d1c5a529085267e6",
+   "size": 354101064
+  },
+  "layer-00013-experts-0384-0511.safetensors": {
+   "sha256": "5ecbaab749e7d65199d3eaf08e4d3886f0e9e5eb2d616ca429d4a7b4e78cacd5",
+   "size": 354101064
+  },
+  "layer-00014-experts-0000-0127.safetensors": {
+   "sha256": "5375b582d9f3d0db1a0e1dfa708b8a3bb488bce2d6993a15a56d203ea599ffc4",
+   "size": 354099744
+  },
+  "layer-00014-experts-0128-0255.safetensors": {
+   "sha256": "feb4daabc1e4a13553858d56574a45180c5d6ed36f1aae76038d2a2e2278d4f9",
+   "size": 354101064
+  },
+  "layer-00014-experts-0256-0383.safetensors": {
+   "sha256": "3534292ddcf54fe1dc9d68c512734ec8c0ec6c89b112b75d2ceb99150e31a137",
+   "size": 354101064
+  },
+  "layer-00014-experts-0384-0511.safetensors": {
+   "sha256": "1ef173e036de6ddad18b1a411f532057714b07e8c2143c7461e2b8ff0c936afe",
+   "size": 354101064
+  },
+  "layer-00015-experts-0000-0127.safetensors": {
+   "sha256": "cfd9114d4769e087bb895134d94cad2c2712c669174425426a3fdaab903dd4de",
+   "size": 354099744
+  },
+  "layer-00015-experts-0128-0255.safetensors": {
+   "sha256": "09745fbee71bfece604a75ebc805f37e764d5624adedc2289d6987c8bc7b7e03",
+   "size": 354101064
+  },
+  "layer-00015-experts-0256-0383.safetensors": {
+   "sha256": "7ea9316cda3ddc17abc346eb2cdfb45d2ec42389bd50d0b8572af2401d899c41",
+   "size": 354101064
+  },
+  "layer-00015-experts-0384-0511.safetensors": {
+   "sha256": "d0bf2eec7d3f8fc8f44a59cc2633c577391af0de8f3327d5d6397b82dbce44e7",
+   "size": 354101064
+  },
+  "layer-00016-experts-0000-0127.safetensors": {
+   "sha256": "3e50bd6deb9c0090c3eeae547f958087e66772ea1d2b5de7f047ef0ec02e16b5",
+   "size": 354099744
+  },
+  "layer-00016-experts-0128-0255.safetensors": {
+   "sha256": "eda0914a4059bde36da9e9f7df9df6232eabcc88d8a5d74d3a44a8c87819e55b",
+   "size": 354101064
+  },
+  "layer-00016-experts-0256-0383.safetensors": {
+   "sha256": "3d79c05fdaa29bd6be4a0b86b96e618b78cff9350a304bdd4a329424e3bc35c7",
+   "size": 354101064
+  },
+  "layer-00016-experts-0384-0511.safetensors": {
+   "sha256": "f2f4d94dd02d0bf812d8dc4892717fddf401fa0581ba4893ecc4a390fa5aeb5a",
+   "size": 354101064
+  },
+  "layer-00017-experts-0000-0127.safetensors": {
+   "sha256": "41a47c033e90b9f3d64ce78b98b4d270142c363a7ecc7f56564996f64eeffef5",
+   "size": 354099744
+  },
+  "layer-00017-experts-0128-0255.safetensors": {
+   "sha256": "628cbaf68bd6141fb4eef6f77bf9b56c9ef8d7aaca3f4ba61bde88d094adf960",
+   "size": 354101064
+  },
+  "layer-00017-experts-0256-0383.safetensors": {
+   "sha256": "6e683c942aa15d33a7906d29e3192e279a3457263f3df41b5fc426dba0ac0f05",
+   "size": 354101064
+  },
+  "layer-00017-experts-0384-0511.safetensors": {
+   "sha256": "fa9c0d86e411ddf4f145bdaffbda315e481cb520e1dc4184b94a55cec0431889",
+   "size": 354101064
+  },
+  "layer-00018-experts-0000-0127.safetensors": {
+   "sha256": "4f86aceb9e6c98947e8f0ce4bf8e5d857014ca2979fa49245f894fbad21cb248",
+   "size": 354099744
+  },
+  "layer-00018-experts-0128-0255.safetensors": {
+   "sha256": "1b557a157d2d303e7ebbc3173a48b9a1c331800c6c96f77646e3182e3ef670d4",
+   "size": 354101064
+  },
+  "layer-00018-experts-0256-0383.safetensors": {
+   "sha256": "7fe04f879e0e255bea0de712df9b3cada7ff5ceb8c3308571019bacde0f4da00",
+   "size": 354101064
+  },
+  "layer-00018-experts-0384-0511.safetensors": {
+   "sha256": "4ce7a4133b37d7ac0609eacc9d55a1a14c9512759d0d1e77c87152eba1a8b0b3",
+   "size": 354101064
+  },
+  "layer-00019-experts-0000-0127.safetensors": {
+   "sha256": "d0752bd39da652748c2d73a1e59e9dc18862f8c01784b7cdbe6907e2fde19925",
+   "size": 354099744
+  },
+  "layer-00019-experts-0128-0255.safetensors": {
+   "sha256": "b68004f4db074d21c5febfd5558965a6d8539458d197a4dd87aa3a876ebb8b54",
+   "size": 354101064
+  },
+  "layer-00019-experts-0256-0383.safetensors": {
+   "sha256": "e0f09bd0cccb86d4f3d0409c5814ec2795374fa6172092e86a4610752bf9c7e8",
+   "size": 354101064
+  },
+  "layer-00019-experts-0384-0511.safetensors": {
+   "sha256": "f6712ce80eddcb24992a1d09fb0e736caed46facd89128322f55529a00aaca1c",
+   "size": 354101064
+  },
+  "layer-00020-experts-0000-0127.safetensors": {
+   "sha256": "c7d78628b3e91e5730b9d48bf317032ce3419469de9dc4714ee06a9bfa094aaf",
+   "size": 354099744
+  },
+  "layer-00020-experts-0128-0255.safetensors": {
+   "sha256": "5617109cfea03537819d22e65c252b114b289521fa4a9884fabc8c207d97a7d8",
+   "size": 354101064
+  },
+  "layer-00020-experts-0256-0383.safetensors": {
+   "sha256": "028300813ef48ae2d10cfed78b3b813b40f929ef243a6f1300117db570f41de2",
+   "size": 354101064
+  },
+  "layer-00020-experts-0384-0511.safetensors": {
+   "sha256": "9b36f4804121b17fe53621cfd4d308ccb3a4450e39bbb059bf4ba6e75418abd5",
+   "size": 354101064
+  },
+  "layer-00021-experts-0000-0127.safetensors": {
+   "sha256": "b005055687601bb0b8958dd84d2227996eebcf3d9e5b225fe1c893f6ead11b80",
+   "size": 354099744
+  },
+  "layer-00021-experts-0128-0255.safetensors": {
+   "sha256": "e3e1a3dbe0ce3183fbbc29767d9635ac7537e9b755c46a1a5ded55ef996b4a7e",
+   "size": 354101064
+  },
+  "layer-00021-experts-0256-0383.safetensors": {
+   "sha256": "f2ce234f8803bc30fe05585b4cfd69ac7516785657f2f0ca968368e700943641",
+   "size": 354101064
+  },
+  "layer-00021-experts-0384-0511.safetensors": {
+   "sha256": "656bf8a6d66f3f5b97ae68cf5be538093b7458108ac0bd1e15e5e4eb86bcee27",
+   "size": 354101064
+  },
+  "layer-00022-experts-0000-0127.safetensors": {
+   "sha256": "658a1b66e74236ca3e72d04a9cac5fde5548671898bbe116927408af3b248f53",
+   "size": 354099744
+  },
+  "layer-00022-experts-0128-0255.safetensors": {
+   "sha256": "61c3e549ea8369ade14cb849785cca6e0e776e33e2e328a9468c775e06eca9aa",
+   "size": 354101064
+  },
+  "layer-00022-experts-0256-0383.safetensors": {
+   "sha256": "f6c807a40d214693cb061b05cc1e96f7bcfc3fab6d96f0aa2e35ee38ceda7196",
+   "size": 354101064
+  },
+  "layer-00022-experts-0384-0511.safetensors": {
+   "sha256": "7bef5776884f3da84ed129a63d6f34d1700238fe8217cf6bd8b49b2b5f844cd5",
+   "size": 354101064
+  },
+  "layer-00023-experts-0000-0127.safetensors": {
+   "sha256": "a66c7e046ef220ea4eac6f0fea0a2a420bc00d0fa2f11edaf692125d24d610a5",
+   "size": 354099744
+  },
+  "layer-00023-experts-0128-0255.safetensors": {
+   "sha256": "80d55d3561a11e4ba16acb5a3091f71a056cc0b2f387afa8c1fafb3385e5a4c6",
+   "size": 354101064
+  },
+  "layer-00023-experts-0256-0383.safetensors": {
+   "sha256": "5ff6e6f52acbc31c81b54a31c72b8a13c87a99646325dc89ba3c88c5d70a97dc",
+   "size": 354101064
+  },
+  "layer-00023-experts-0384-0511.safetensors": {
+   "sha256": "73ace8ceed210d7634adf6ef4292fa2c57490e5d65f14b3b21bc243f97f4b63f",
+   "size": 354101064
+  },
+  "layer-00024-experts-0000-0127.safetensors": {
+   "sha256": "eeb2e216c912432a0812e6586772a51182f694bbddc7484d77eba7317861d3c7",
+   "size": 354099744
+  },
+  "layer-00024-experts-0128-0255.safetensors": {
+   "sha256": "6779adf051f86b0c88e1ff41dcfb44e36454603c4479ef963d8802516f44cfd2",
+   "size": 354101064
+  },
+  "layer-00024-experts-0256-0383.safetensors": {
+   "sha256": "1ffce1b27c279ae0ae2ce8d55fac4dd50d2ff92b9e5a81bd28246ccd9f8be10a",
+   "size": 354101064
+  },
+  "layer-00024-experts-0384-0511.safetensors": {
+   "sha256": "952483dfb04a826f2d9678790edfcc0d499bd2a212fbf1a7ee048ebe9523227c",
+   "size": 354101064
+  },
+  "layer-00025-experts-0000-0127.safetensors": {
+   "sha256": "23f31c54b152c1e8d52dccf58227412c911a48c3c94e583828d1d33e95ed7cfe",
+   "size": 354099744
+  },
+  "layer-00025-experts-0128-0255.safetensors": {
+   "sha256": "872ca3ae1477397b74ab08ed84bf8157cea8ef265493a8dbdb6a3df941fba12f",
+   "size": 354101064
+  },
+  "layer-00025-experts-0256-0383.safetensors": {
+   "sha256": "4eedfc6bee4f73d50a8dc44041ee198096e7bde101276661d334877dc530cf21",
+   "size": 354101064
+  },
+  "layer-00025-experts-0384-0511.safetensors": {
+   "sha256": "fea7cf51d64845f8861e18d662b91a04749ebce65bc41ca44a859d26aef69fc3",
+   "size": 354101064
+  },
+  "layer-00026-experts-0000-0127.safetensors": {
+   "sha256": "16bd867ff98647065d53f9365fcdae96a54ca80c847b180be584ffd528c425bc",
+   "size": 354099744
+  },
+  "layer-00026-experts-0128-0255.safetensors": {
+   "sha256": "5e36bee7416a82f4de6aff2950f055c5e5bba27ac21bbcda9236a96a02b4e9b2",
+   "size": 354101064
+  },
+  "layer-00026-experts-0256-0383.safetensors": {
+   "sha256": "6e0b694fe9229778977113122d7ee5944728ac40a4cdb307ade739da495c464d",
+   "size": 354101064
+  },
+  "layer-00026-experts-0384-0511.safetensors": {
+   "sha256": "bafbb49e694089ef5cac3258779008b8d3804331c37b344e7c3dceb2db82a484",
+   "size": 354101064
+  },
+  "layer-00027-experts-0000-0127.safetensors": {
+   "sha256": "f4d45bd08db56a40b464e94a407571c00ad50c866a5252de12861ed876d9ec20",
+   "size": 354099744
+  },
+  "layer-00027-experts-0128-0255.safetensors": {
+   "sha256": "8eea1e4b53e61d91b5d1887556bfc4b7177f2593cbe76dacfae450be1da73ec5",
+   "size": 354101064
+  },
+  "layer-00027-experts-0256-0383.safetensors": {
+   "sha256": "c3ef36b5522f8a84e5ca651f8d5cc75b2ab0d798ec33fa9e50fe1fd0016ea43e",
+   "size": 354101064
+  },
+  "layer-00027-experts-0384-0511.safetensors": {
+   "sha256": "39d56065826df29140378c2637d50f52f4c3d150ccb734aa6f3947bacc6ba06d",
+   "size": 354101064
+  },
+  "layer-00028-experts-0000-0127.safetensors": {
+   "sha256": "167121b8fdba707db2565ef5ad135067668c6185bcce6ec07c1a4ab1745da800",
+   "size": 354099744
+  },
+  "layer-00028-experts-0128-0255.safetensors": {
+   "sha256": "ed09c9dfb01194438ebad611677e1481ca8e9414dad736f941cfb31d22e7f928",
+   "size": 354101064
+  },
+  "layer-00028-experts-0256-0383.safetensors": {
+   "sha256": "e4dfd0ab7b8e2911ad95381b1d0d5fa4b938a3c24299b884d6b3aa19bb8976cb",
+   "size": 354101064
+  },
+  "layer-00028-experts-0384-0511.safetensors": {
+   "sha256": "d72b4e6d63cbcfb24adbb80139b08192c20cf54a9636fdb4569505e27cf697bf",
+   "size": 354101064
+  },
+  "layer-00029-experts-0000-0127.safetensors": {
+   "sha256": "191f6b731c3277fbd7cf9c54870ff89c26fd649f26e1542a3e84d2f166390bee",
+   "size": 354099744
+  },
+  "layer-00029-experts-0128-0255.safetensors": {
+   "sha256": "8b8ec3f61cf417aa226eca31fb519017a589f66fce91ef1700b70c25c81e4133",
+   "size": 354101064
+  },
+  "layer-00029-experts-0256-0383.safetensors": {
+   "sha256": "7a987e306f20a7789d0844d0447ec2898dd9cf0366f6745e5b1f613ee22d30a3",
+   "size": 354101064
+  },
+  "layer-00029-experts-0384-0511.safetensors": {
+   "sha256": "cd2e856fd611ef16ea7b5165d007824b143e4722951cb3d0c24dacb46fa6c3cf",
+   "size": 354101064
+  },
+  "layer-00030-experts-0000-0127.safetensors": {
+   "sha256": "c29abf64ed4750fe3953add6c34c94a4eef9766de1a20c3cbaa8ef022aac0539",
+   "size": 354099744
+  },
+  "layer-00030-experts-0128-0255.safetensors": {
+   "sha256": "1700aca965ff37c98ee5e0d4d44063100c2f140683dbfbb1be16bad61e224e2d",
+   "size": 354101064
+  },
+  "layer-00030-experts-0256-0383.safetensors": {
+   "sha256": "415158f92153dd8ab1d6c0a4d5677f597973aa9a1c84b84d2d89c9ece9c00b41",
+   "size": 354101064
+  },
+  "layer-00030-experts-0384-0511.safetensors": {
+   "sha256": "faf05010775e068d536ddfb2bd0e542765d49c1ad3595859d0577cf35f8308d7",
+   "size": 354101064
+  },
+  "layer-00031-experts-0000-0127.safetensors": {
+   "sha256": "e412fce5864d8f5eae8027ad62384d657b6513ed72f29b473686251a0a0f80b5",
+   "size": 354099744
+  },
+  "layer-00031-experts-0128-0255.safetensors": {
+   "sha256": "c648b3650c051081fdcbad1aa85d62b9d03665750afb33471ee7ad82dc821447",
+   "size": 354101064
+  },
+  "layer-00031-experts-0256-0383.safetensors": {
+   "sha256": "6dcde24c3e739d34bce6c9f9db99c5a50a309b0408412d2685c2acec5529509f",
+   "size": 354101064
+  },
+  "layer-00031-experts-0384-0511.safetensors": {
+   "sha256": "52a68e934644c3a5dc2f8fb2a278cb44ee45e980b167253c6473534c5e4459dd",
+   "size": 354101064
+  },
+  "layer-00032-experts-0000-0127.safetensors": {
+   "sha256": "a901a7f654b9e4036d06c4338bfce5e5a67fc242eac4ab8a56404f9187789c4c",
+   "size": 354099744
+  },
+  "layer-00032-experts-0128-0255.safetensors": {
+   "sha256": "f28734c4345860fb4a4288f51ba66e9f788cd0f853e3eed8c38427cd67906abe",
+   "size": 354101064
+  },
+  "layer-00032-experts-0256-0383.safetensors": {
+   "sha256": "6f4254b9f72f6539d55d3c8836e641a210d6f49420fac867a86f484055e3cbb2",
+   "size": 354101064
+  },
+  "layer-00032-experts-0384-0511.safetensors": {
+   "sha256": "3ad0766ce3ed7e33abbe5377e81352b8385e644f9848c998cce7a3f8fc648007",
+   "size": 354101064
+  },
+  "layer-00033-experts-0000-0127.safetensors": {
+   "sha256": "d3457a0fe7114671ea096013c63016f130cd3d1345df73129b3a77c0b8a21d05",
+   "size": 354099744
+  },
+  "layer-00033-experts-0128-0255.safetensors": {
+   "sha256": "8bb65f9ebb5705977e2340d16f48f6bcdf27ab06ee601f34eb2c727932c5e0b6",
+   "size": 354101064
+  },
+  "layer-00033-experts-0256-0383.safetensors": {
+   "sha256": "8379c4ebf09538d0ddb8c921824f02f56beb400ea07c43f351cccdba4df008a4",
+   "size": 354101064
+  },
+  "layer-00033-experts-0384-0511.safetensors": {
+   "sha256": "c2712c95854b10ac6537fe6aeba77c26bdd14e4c85b863dc01efc7edf5f0410c",
+   "size": 354101064
+  },
+  "layer-00034-experts-0000-0127.safetensors": {
+   "sha256": "a4c1357b28b006d429ebe28ff6992ae75562abc9312a0a26b304104b0a21c77f",
+   "size": 354099744
+  },
+  "layer-00034-experts-0128-0255.safetensors": {
+   "sha256": "0e363cd17744a48160d87b6a8237fe88c384c72792a76d736c051c4c60b88a1c",
+   "size": 354101064
+  },
+  "layer-00034-experts-0256-0383.safetensors": {
+   "sha256": "f6a573b81d9a559d7dfa18c0bede45a350d5c04fb66fb7f8d3287d2d9d0a10fe",
+   "size": 354101064
+  },
+  "layer-00034-experts-0384-0511.safetensors": {
+   "sha256": "42dc48d819ffecba874637d1e4045a723ae9e32ec4f20d7d86c4f3fa848bad9b",
+   "size": 354101064
+  },
+  "layer-00035-experts-0000-0127.safetensors": {
+   "sha256": "6fdde044c5c6be04b535e932e67354893cf929ff06f782aea65610a3c7d53c5c",
+   "size": 354099744
+  },
+  "layer-00035-experts-0128-0255.safetensors": {
+   "sha256": "199bc5da8d9a601aa7843904322785ada6b1a2e9788ee2c48dbcf71e5dcc7c6a",
+   "size": 354101064
+  },
+  "layer-00035-experts-0256-0383.safetensors": {
+   "sha256": "45854a0d4189dd4aa665a0601e1753d158a113c7f1ad9936c4562a8b2fd4205f",
+   "size": 354101064
+  },
+  "layer-00035-experts-0384-0511.safetensors": {
+   "sha256": "160558e06ce321881aa8c69e3645bb7dbfbff486733a5e3b43b4401a52260271",
+   "size": 354101064
+  },
+  "layer-00036-experts-0000-0127.safetensors": {
+   "sha256": "51d5af4d5127c03c60e071990ad2d815cf6c1fe0ae68d9dc7b25fe4b889517bc",
+   "size": 354099744
+  },
+  "layer-00036-experts-0128-0255.safetensors": {
+   "sha256": "f645eecac11b3100ca95cb4c09b0006bc8ea22e52e0229e33cb47eddbc70c900",
+   "size": 354101064
+  },
+  "layer-00036-experts-0256-0383.safetensors": {
+   "sha256": "3564c991a741712fc1ca76036491caa7fe77aecaad128a648690a730a0f491b4",
+   "size": 354101064
+  },
+  "layer-00036-experts-0384-0511.safetensors": {
+   "sha256": "d800d80403f00ae917b0d90f05aa45b2ed61e89200a3f51ae2fbe88dff57068f",
+   "size": 354101064
+  },
+  "layer-00037-experts-0000-0127.safetensors": {
+   "sha256": "71cdfd91ffe68eec5533e72e3cc1b1407ea5c5ed2b8f9bb8db5890ae94f39c9f",
+   "size": 354099744
+  },
+  "layer-00037-experts-0128-0255.safetensors": {
+   "sha256": "ad2c17287fa9ae5b1a4d9d985755747b519e4172c4f873079974bae190d1dbc1",
+   "size": 354101064
+  },
+  "layer-00037-experts-0256-0383.safetensors": {
+   "sha256": "26e62832841e596317963d7ed58976af9e16b0c9ee3d5f84ec1ad666475e3272",
+   "size": 354101064
+  },
+  "layer-00037-experts-0384-0511.safetensors": {
+   "sha256": "b5178e71148d87689f2c7a10d085a2c9a268b627caa6047b32278c59d459417f",
+   "size": 354101064
+  },
+  "layer-00038-experts-0000-0127.safetensors": {
+   "sha256": "be8ba27de2f0335702008b9c33b00d9aca09d602c1e1323f105f26ae9819294f",
+   "size": 354099744
+  },
+  "layer-00038-experts-0128-0255.safetensors": {
+   "sha256": "8c9d49f062400cc1dc33bd952b668c6b98b07163723aea6fc2b29cf5532b9b99",
+   "size": 354101064
+  },
+  "layer-00038-experts-0256-0383.safetensors": {
+   "sha256": "a801f3ce3171e99ce64f46f06c8faa3ff030bac065d8b2227b9b46984b88ea3a",
+   "size": 354101064
+  },
+  "layer-00038-experts-0384-0511.safetensors": {
+   "sha256": "7d1dcd0980be5346069a251e53746a1bd689254a9ac18fa41dca8fd024727813",
+   "size": 354101064
+  },
+  "layer-00039-experts-0000-0127.safetensors": {
+   "sha256": "87b59a2aa0f9455741450374e9e82a9d780aeec274305c225fd84089a35088c5",
+   "size": 354099744
+  },
+  "layer-00039-experts-0128-0255.safetensors": {
+   "sha256": "b0eb0601b3ee5195029fd4cb9015b8ad3e87112a054ad3dc2fa61e003ea7155a",
+   "size": 354101064
+  },
+  "layer-00039-experts-0256-0383.safetensors": {
+   "sha256": "25340bf6076ea8ae7934395c73be641423d4658a229ead0c8fe29eb4519f2cbc",
+   "size": 354101064
+  },
+  "layer-00039-experts-0384-0511.safetensors": {
+   "sha256": "5b576cf499d8e2e5b1b51528d1cc8a768b797da76a2e4348f4a9eff659601c29",
+   "size": 354101064
+  },
+  "layer-00040-experts-0000-0127.safetensors": {
+   "sha256": "2c1cd5f8024a38988ded014674c8709e9af7fed6f8cd39ab6f18926e10600d39",
+   "size": 354099744
+  },
+  "layer-00040-experts-0128-0255.safetensors": {
+   "sha256": "ccbc7601a067b28dc731b6fe352d8c67572c1cd92758a6415a7807b1518ecb47",
+   "size": 354101064
+  },
+  "layer-00040-experts-0256-0383.safetensors": {
+   "sha256": "f82f99ce977451dd8ac9c06f65a04ec651e2deadd3f7a5d0d02850b4570854be",
+   "size": 354101064
+  },
+  "layer-00040-experts-0384-0511.safetensors": {
+   "sha256": "1b6dcef40e6554a7ed505413b917b1a3e199a44ec344b67cf8d9508cf50c40e4",
+   "size": 354101064
+  },
+  "layer-00041-experts-0000-0127.safetensors": {
+   "sha256": "0d1dcc5d9af95042582088fc647281c30e958d029fcc9674bdfebde003b227a0",
+   "size": 354099744
+  },
+  "layer-00041-experts-0128-0255.safetensors": {
+   "sha256": "1ea9877ed61e9d5f9b11de811a946a689b8361059e4c37da265331515f8c981e",
+   "size": 354101064
+  },
+  "layer-00041-experts-0256-0383.safetensors": {
+   "sha256": "c753bc389b635c7501b6b4b9913e5390903d0f41db91bbbb42eabfc674de13fe",
+   "size": 354101064
+  },
+  "layer-00041-experts-0384-0511.safetensors": {
+   "sha256": "61a68f124a94b79ff73dd1f715d5e5b87aba07935a433fbbe69d617b9a0741a4",
+   "size": 354101064
+  },
+  "layer-00042-experts-0000-0127.safetensors": {
+   "sha256": "dce223234b49c105f53affa4c9c75f896805578c605198caffb25a25e49dc187",
+   "size": 354099744
+  },
+  "layer-00042-experts-0128-0255.safetensors": {
+   "sha256": "16844e33603adc85b7bf16d22746654b8e87cca59d4e53f0292e7d9aad373cf4",
+   "size": 354101064
+  },
+  "layer-00042-experts-0256-0383.safetensors": {
+   "sha256": "4b00670c0f1d655a6a3f6c14154ed07be65fd5292e811a6bf2efc0e659be9a81",
+   "size": 354101064
+  },
+  "layer-00042-experts-0384-0511.safetensors": {
+   "sha256": "aaaad7fff6f7592342e876c03cfb9ff3a31ec569bb252531e5ae4e965941526f",
+   "size": 354101064
+  },
+  "layer-00043-experts-0000-0127.safetensors": {
+   "sha256": "cdac2fa719a89a2dd92a2ab0a95075f6886f93421212738fe384407231c358bf",
+   "size": 354099744
+  },
+  "layer-00043-experts-0128-0255.safetensors": {
+   "sha256": "4d2f74efa8e51f6c1cd5e67f82eb8862781e269f83b4abe4bec958b3a72ff60f",
+   "size": 354101064
+  },
+  "layer-00043-experts-0256-0383.safetensors": {
+   "sha256": "655950b005c355ea3fcd9ab2185c990fc013614ee4968c94f2d87ab5e9eb6087",
+   "size": 354101064
+  },
+  "layer-00043-experts-0384-0511.safetensors": {
+   "sha256": "63677619041caa80f5d1e8aa600952d05833639d418057ac49c6ae9ce1a4a4b6",
+   "size": 354101064
+  },
+  "layer-00044-experts-0000-0127.safetensors": {
+   "sha256": "34967f93483801051359805c552e4022906b387852b1eee4468d9495f9961559",
+   "size": 354099744
+  },
+  "layer-00044-experts-0128-0255.safetensors": {
+   "sha256": "e0140d37249ca554fe954acaacfeac5bd6b7ccebc9f0163d050cee9e9ff0c3de",
+   "size": 354101064
+  },
+  "layer-00044-experts-0256-0383.safetensors": {
+   "sha256": "3abdd5272b84056e1952eebf6b6ac996fc9018d7673db33ee7dd71ff49a58195",
+   "size": 354101064
+  },
+  "layer-00044-experts-0384-0511.safetensors": {
+   "sha256": "e1675741456242da6e138394501a61e57dbe252c25bbabc93daaa022b2b04132",
+   "size": 354101064
+  },
+  "layer-00045-experts-0000-0127.safetensors": {
+   "sha256": "c0a7075242c34eb7888abe0d9f6b821ab7fc044128d47767f9ce913dcc6f4226",
+   "size": 354099744
+  },
+  "layer-00045-experts-0128-0255.safetensors": {
+   "sha256": "2874ac56c4b43b51490761ccc0f514d9c5578c0188a9cb2c5d228bdabf709b31",
+   "size": 354101064
+  },
+  "layer-00045-experts-0256-0383.safetensors": {
+   "sha256": "6b90ddd1f7dc1bb8cf63cd65ce2a3ea80316ac076d10347611b8134cdac08c6d",
+   "size": 354101064
+  },
+  "layer-00045-experts-0384-0511.safetensors": {
+   "sha256": "ae50a271ed7d5179bc63f68a5afcca41b76162162c430d9346f5ad650a384163",
+   "size": 354101064
+  },
+  "layer-00046-experts-0000-0127.safetensors": {
+   "sha256": "62c06cc3f4819a2295d82aab3387b106bf3c4f18432b32205c25427a2a711661",
+   "size": 354099744
+  },
+  "layer-00046-experts-0128-0255.safetensors": {
+   "sha256": "0ccbda9e8de1489788bc7101c14438b21a92e167deecfeb10c83c79a7a5ef9c2",
+   "size": 354101064
+  },
+  "layer-00046-experts-0256-0383.safetensors": {
+   "sha256": "054649e93e7267cb5c0c19240dcc736635065b2a13e3b9b0b7a6b1fb78c61ace",
+   "size": 354101064
+  },
+  "layer-00046-experts-0384-0511.safetensors": {
+   "sha256": "29c48c2ea70b332d51a239733943f8e1d821bd1ec32f421c71f2802cdab2353a",
+   "size": 354101064
+  },
+  "layer-00047-experts-0000-0127.safetensors": {
+   "sha256": "c46a1bbc75dd9ea472abfc19a34c46cad79ea8073534e1fab31c775b9bb7ed92",
+   "size": 354099744
+  },
+  "layer-00047-experts-0128-0255.safetensors": {
+   "sha256": "e646ec460b49b2104a20afb11f87aea94f55bb357c85361bf999f54e6aac57cc",
+   "size": 354101064
+  },
+  "layer-00047-experts-0256-0383.safetensors": {
+   "sha256": "9b2096f39a667e82db9ec5a87b6cad27eb34da680c3a10f90a5ae9a9a202340e",
+   "size": 354101064
+  },
+  "layer-00047-experts-0384-0511.safetensors": {
+   "sha256": "28c4d594c1a9c2a798c882e0e6636294c41af4c12098da17fce88182c4f68a55",
+   "size": 354101064
+  }
+ },
+ "repo": "ravitejac/qwen3.8-flash-next-nvfp4-qg1-experts",
+ "revision": "8352943a271bf0c25eb0a07a46a30910e5231bc9"
+}

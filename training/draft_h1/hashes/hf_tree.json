@@ -1,0 +1,35 @@
+{
+ "files": {
+  ".gitattributes": {
+   "sha256": null,
+   "size": 1581
+  },
+  "AGI2_PROVENANCE.md": {
+   "sha256": null,
+   "size": 2199
+  },
+  "README.md": {
+   "sha256": null,
+   "size": 5402
+  },
+  "assets/dflash2-figure.png": {
+   "sha256": "6d8dcc9a9472bddb644c881fe83050b5343d09bf5ffb0912e5598e55fe671e99",
+   "size": 286889
+  },
+  "config.json": {
+   "sha256": null,
+   "size": 1236
+  },
+  "model.safetensors": {
+   "sha256": "9a064a9068f9f539d2b1967c53799a5b26bb34aae0847895e7e71279f188541c",
+   "size": 1206140040
+  },
+  "patches/qwen38-dflash2-capture.patch": {
+   "sha256": null,
+   "size": 2642
+  }
+ },
+ "private": true,
+ "repo": "ravitejac/dflash2-qwen3.8-flash-next-h1",
+ "revision": "bf724c20b8b074068c30583d4b4c07bc375f3964"
+}

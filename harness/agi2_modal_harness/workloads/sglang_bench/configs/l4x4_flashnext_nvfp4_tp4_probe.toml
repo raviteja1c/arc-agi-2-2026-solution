@@ -1,0 +1,66 @@
+# Qwen3.8-Flash-Next (RadixArk NVFP4) on 4 x L4 with tensor parallelism 4: the bring-up probe config
+# (docs/reports/1023_0106_flashnext_l4x4/, fork branch agi2/feat/flashnext-l4). Experiment-only: nothing on the
+# Kaggle or 27B path names it.
+# Starts from the G4 server (rtxpro6000_flashnext_nvfp4_dflash2_harness_fp8kv_fp32.toml) with what L4 forces:
+# - tp 4 (78 GiB of weights stay on GPU; ~19.5 GiB per L4 of 22.5);
+# - the routed experts' NVFP4 through Marlin W4A16 (sm_89 has no FP4 tensor cores; modelopt_quant.py falls back to
+#   Marlin for capability 8.0-9.x), so --moe-runner-backend / --fp4-gemm-backend marlin, not flashinfer_cutlass;
+# - few slots and a small CUDA-graph batch list until the memory budget is measured;
+# - the speculative flags live in the dflash2 arm, so the target arm boots the model alone (arm flags can override
+#   the base's but not remove them, bench_config.merge_flags).
+slug = "l4x4-flashnext-nvfp4-tp4-probe"
+model_alias = "qwen3.8-flash-next-nvfp4-radixark"
+served_name = "qwen3.8-flash-next"
+subset = "pilot30"
+budget_usd = 30.0
+same_host = true
+
+[greedy]
+prompts = 0
+max_new_tokens = 64
+
+[snapshot]
+enabled = false
+
+[sampling]
+reasoning_effort = "xhigh"
+temperature = 1.0
+top_p = 0.95
+top_k = 20
+
+[server]
+tp = 4
+mem_fraction_static = 0.88
+context_length = 131072
+max_running_requests = 4
+chunked_prefill_size = 2048
+disable_radix_cache = true
+mamba_ssm_dtype = "float32"
+kv_cache_dtype = "fp8_e4m3"
+decode_log_interval = 200
+extra_args = ["--quantization", "modelopt_fp4", "--fp4-gemm-backend", "marlin", "--moe-runner-backend", "marlin",
+              "--page-size", "64", "--ple-offload-embedding", "--cuda-graph-max-bs-decode", "4",
+              "--max-mamba-cache-size", "8", "--min-free-slots-delay", "1", "--disable-prefill-cuda-graph",
+              "--linear-attn-verify-backend", "triton", "--tool-call-parser", "qwen3_coder",
+              "--image-processor-backend", "pil", "--enable-streaming-session"]
+env = { PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True" }
+
+[compute]
+gpu = "L4:4"
+cpu = 8.0
+memory_mib = 131072
+timeout_hours = 6.0
+boot_timeout_min = 45
+
+# The model alone: the first boot isolates TP4 + Marlin + QSA on sm_89 from speculative decoding.
+[[arms]]
+name = "target"
+env = { SGLANG_ENABLE_STREAMING_SESSION_RETRACT = "1", SGLANG_ENABLE_STREAMING_SESSION_EVICT = "1", SGLANG_AGI2_QSA_SESSION_PREFIX = "1", SGLANG_AGI2_QSA_RING2 = "1" }
+
+# The G4 harness server's speculative decoding: DFlash2 with 4 draft tokens, the draft unquantized.
+[[arms]]
+name = "dflash2"
+draft_alias = "dflash2-qwen3.8-flash-next"
+extra_args = ["--speculative-algorithm", "DFLASH", "--speculative-num-draft-tokens", "4",
+              "--speculative-draft-model-quantization", "unquant"]
+env = { SGLANG_ENABLE_STREAMING_SESSION_RETRACT = "1", SGLANG_ENABLE_STREAMING_SESSION_EVICT = "1", SGLANG_AGI2_QSA_SESSION_PREFIX = "1", SGLANG_AGI2_QSA_RING2 = "1" }

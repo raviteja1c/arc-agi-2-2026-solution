@@ -1,0 +1,20 @@
+{
+ "author": "Ravi Teja Chilakala",
+ "competitionDataSources": [
+  "arc-prize-2026-arc-agi-2"
+ ],
+ "currentVersionNumber": 4,
+ "dockerImage": "gcr.io/kaggle-images/python@sha256:81b1e7c4b4f0f2a7e0a33943c95754b1b7af6b30d65221633a284b6b601cd84a",
+ "enableGpu": false,
+ "enableInternet": true,
+ "enableTpu": false,
+ "id": 137224476,
+ "isPrivate": false,
+ "kernelType": "notebook",
+ "language": "python",
+ "lastRunTime": "2026-11-11T07:42:09.356Z",
+ "machineShape": "None",
+ "ref": "carriem7/1006-sglang-runtime-cp312",
+ "slug": "1006-sglang-runtime-cp312",
+ "title": "1006 sglang runtime cp312"
+}
